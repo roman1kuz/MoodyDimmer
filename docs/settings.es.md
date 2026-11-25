@@ -107,6 +107,14 @@ ninguno, inglés. También puedes elegir *English*, *Русский* o *Español
 
 Abre Moody Dimmer al iniciar sesión.
 
+## Buscar actualizaciones…
+
+Pregunta a GitHub por la última versión, solo cuando eliges esta opción: la app nunca comprueba nada en segundo plano.
+Mientras comprueba, la opción muestra un indicador de progreso y el menú sigue abierto. Si hay una versión nueva, el
+aviso enlaza a su página de publicación. Si la app se instaló con Homebrew, el aviso también muestra el comando de
+actualización (`brew upgrade moody-dimmer`) con un botón para copiarlo. La app no descarga ni instala nada por sí
+misma.
+
 ## Salir
 
 Cierra Moody Dimmer.

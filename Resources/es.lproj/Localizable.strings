@@ -34,3 +34,17 @@
 "Press the new shortcut" = "Pulsa el nuevo atajo";
 "Esc to cancel, Delete to remove" = "Esc para cancelar, Suprimir para quitarlo";
 "Use at least one of ⌘, ⌥ or ⌃" = "Usa al menos una de las teclas ⌘, ⌥ o ⌃";
+
+/* Updates */
+"Check for Updates…" = "Buscar actualizaciones…";
+"Checking for Updates…" = "Buscando actualizaciones…";
+"Couldn't check for updates" = "No se pudieron buscar actualizaciones";
+"Check your internet connection or try again later." = "Comprueba tu conexión a internet o inténtalo más tarde.";
+"You're up to date" = "Tienes la última versión";
+"Moody Dimmer %@ is the latest version." = "Moody Dimmer %@ es la versión más reciente.";
+"Moody Dimmer %@ is available" = "Moody Dimmer %@ está disponible";
+"You have version %@." = "Tienes la versión %@.";
+"Installed with Homebrew. Update with this command or download it manually:" = "Instalada con Homebrew. Actualízala con este comando o descárgala manualmente:";
+"Copy Command" = "Copiar comando";
+"Download" = "Descargar";
+"Later" = "Más tarde";

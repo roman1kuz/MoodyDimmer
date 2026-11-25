@@ -40,8 +40,9 @@ menu, with ⌃⌥⌘D, or by shaking the pointer quickly in place.
 
 ## Privacy
 
-Moody Dimmer makes no network connections: no telemetry, no analytics, no update checks. Accessibility access is used
-only to find the active window and where it is on screen.
+Moody Dimmer doesn't go online on its own: no telemetry, no analytics, no background update checks. The only request
+is when you choose *Check for Updates…*: the app asks GitHub for the number of the latest version, and downloads
+nothing. Accessibility access is used only to find the active window and where it is on screen.
 
 ## Documentation
 

@@ -34,3 +34,17 @@
 "Press the new shortcut" = "Нажмите новое сочетание клавиш";
 "Esc to cancel, Delete to remove" = "Esc — отмена, Delete — убрать сочетание";
 "Use at least one of ⌘, ⌥ or ⌃" = "Нужна хотя бы одна из клавиш ⌘, ⌥ или ⌃";
+
+/* Updates */
+"Check for Updates…" = "Проверить обновления…";
+"Checking for Updates…" = "Проверка обновлений…";
+"Couldn't check for updates" = "Не удалось проверить обновления";
+"Check your internet connection or try again later." = "Проверьте подключение к интернету или попробуйте позже.";
+"You're up to date" = "У вас последняя версия";
+"Moody Dimmer %@ is the latest version." = "Moody Dimmer %@ — последняя версия.";
+"Moody Dimmer %@ is available" = "Доступна Moody Dimmer %@";
+"You have version %@." = "У вас версия %@.";
+"Installed with Homebrew. Update with this command or download it manually:" = "Приложение установлено через Homebrew. Обновите его этой командой или скачайте вручную:";
+"Copy Command" = "Скопировать команду";
+"Download" = "Скачать";
+"Later" = "Позже";

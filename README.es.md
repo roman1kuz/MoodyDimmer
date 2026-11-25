@@ -42,8 +42,10 @@ la parte superior del menú, con ⌃⌥⌘D o agitando el puntero rápido sin mo
 
 ## Privacidad
 
-Moody Dimmer no se conecta a la red: sin telemetría, sin analíticas y sin comprobar actualizaciones. El acceso de
-Accesibilidad solo sirve para encontrar la ventana activa y su posición en la pantalla.
+Moody Dimmer no se conecta a la red por su cuenta: sin telemetría, sin analíticas y sin buscar actualizaciones en
+segundo plano. La única consulta es cuando eliges *Buscar actualizaciones…*: la app pregunta a GitHub por el número de
+la última versión y no descarga nada. El acceso de Accesibilidad solo sirve para encontrar la ventana activa y su
+posición en la pantalla.
 
 ## Documentación
 

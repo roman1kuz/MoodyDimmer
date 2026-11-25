@@ -103,6 +103,13 @@ English. You can also pick *English*, *Русский* or *Español*. The menu s
 
 Starts Moody Dimmer when you log in.
 
+## Check for Updates…
+
+Asks GitHub for the latest version, only when you choose this item: the app never checks in the background. While it
+checks, the item shows a spinner and the menu stays open. If a newer version is out, the alert links to its release
+page. If the app was installed with Homebrew, the alert also shows the upgrade command (`brew upgrade moody-dimmer`)
+with a button to copy it. The app itself never downloads or installs anything.
+
 ## Quit
 
 Quits Moody Dimmer.

@@ -310,6 +310,117 @@ private final class SectionHeader: NSView {
     }
 }
 
+/// "Check for Updates…" as a hand-made menu row: a regular item closes the menu on click, so the progress
+/// would be invisible. This row keeps the menu open, shows "Checking for Updates…" with a spinner, and the
+/// owner closes the menu when the result is ready. It draws the same highlight as the system items.
+final class UpdateRow: NSView {
+    var onPress: (() -> Void)?
+    private(set) var isChecking = false
+    private let label = NSTextField(labelWithString: "")
+    private var spinnerStep = 0
+    private var spinnerTimer: Timer?
+    private static let height: CGFloat = 24
+    private static let spinnerSize: CGFloat = 14
+
+    override init(frame: NSRect) {
+        // Wide enough for the longer of the two titles plus the spinner; the menu grows to fit if needed.
+        let font = NSFont.menuFont(ofSize: 0)
+        let text = [L("Check for Updates…"), L("Checking for Updates…")]
+            .map { ceil(($0 as NSString).size(withAttributes: [.font: font]).width) }.max() ?? 150
+        let width = SliderRow.leading + text + 12 + Self.spinnerSize + SliderRow.trailing
+        super.init(frame: NSRect(x: 0, y: 0, width: width, height: Self.height))
+        autoresizingMask = [.width]
+        label.font = font
+        label.lineBreakMode = .byTruncatingTail
+        label.frame = NSRect(x: SliderRow.leading - 2, y: 3, width: text + 6, height: 17)
+        label.autoresizingMask = [.width]
+        addSubview(label)
+        setAccessibilityElement(true)
+        setAccessibilityRole(.menuItem)
+        updateText()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
+
+    func setChecking(_ checking: Bool) {
+        guard checking != isChecking else { return }
+        isChecking = checking
+        spinnerTimer?.invalidate()
+        spinnerTimer = nil
+        if checking {
+            let timer = Timer(timeInterval: 1.0 / 12, repeats: true) { [weak self] _ in
+                guard let self else { return }
+                self.spinnerStep = (self.spinnerStep + 1) % 8
+                self.needsDisplay = true
+            }
+            RunLoop.main.add(timer, forMode: .common)  // the menu tracks events in its own run loop mode
+            spinnerTimer = timer
+        }
+        updateText()
+        needsDisplay = true
+    }
+
+    /// The menu sets `isHighlighted` on view items but doesn't redraw them, so hover is tracked here too.
+    private var hovered = false
+    private var highlighted: Bool { !isChecking && (hovered || enclosingMenuItem?.isHighlighted == true) }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        trackingAreas.forEach(removeTrackingArea)
+        addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                                       owner: self))
+    }
+
+    override func mouseEntered(with event: NSEvent) { hovered = true; needsDisplay = true }
+    override func mouseExited(with event: NSEvent) { hovered = false; needsDisplay = true }
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        hovered = false  // the menu was closed and reopened
+    }
+
+    private func updateText() {
+        label.stringValue = isChecking ? L("Checking for Updates…") : L("Check for Updates…")
+        label.textColor = isChecking ? .secondaryLabelColor : highlighted ? .selectedMenuItemTextColor : .labelColor
+        setAccessibilityLabel(label.stringValue)
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        // Same highlight as the system items: accent color, 5 pt from the menu edges, full row height.
+        if highlighted {
+            NSColor.controlAccentColor.setFill()
+            NSBezierPath(roundedRect: bounds.insetBy(dx: 5, dy: 0), xRadius: 8, yRadius: 8).fill()
+        }
+        updateText()
+        guard isChecking else { return }
+        // Spinner: 8 spokes, the brightest one moving clockwise.
+        let s = Self.spinnerSize
+        let c = NSPoint(x: bounds.maxX - SliderRow.trailing - s / 2, y: bounds.midY)
+        for i in 0..<8 {
+            let angle = CGFloat.pi / 2 - CGFloat(i) * .pi / 4
+            let age = (spinnerStep - i + 8) % 8
+            NSColor.secondaryLabelColor.withAlphaComponent(1 - CGFloat(age) * 0.11).setStroke()
+            let path = NSBezierPath()
+            path.move(to: NSPoint(x: c.x + cos(angle) * s * 0.22, y: c.y + sin(angle) * s * 0.22))
+            path.line(to: NSPoint(x: c.x + cos(angle) * s * 0.46, y: c.y + sin(angle) * s * 0.46))
+            path.lineWidth = 1.6
+            path.lineCapStyle = .round
+            path.stroke()
+        }
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        guard !isChecking, bounds.contains(convert(event.locationInWindow, from: nil)) else { return }
+        onPress?()
+    }
+
+    override func accessibilityPerformPress() -> Bool {
+        guard !isChecking else { return false }
+        onPress?()
+        return true
+    }
+}
+
 final class StatusMenu: NSObject, NSMenuDelegate {
     var onMenuWillOpen: (() -> Void)?
     var onChangeShortcut: (() -> Void)?
@@ -330,6 +441,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     private var dimRowItem: NSMenuItem!
     private var blurRowItem: NSMenuItem!
     private var loginItem: NSMenuItem!
+    private var updateRow: UpdateRow!
     private var shortcutItem: NSMenuItem!
     private var shakeItem: NSMenuItem!
     private var permissionItem: NSMenuItem!
@@ -422,6 +534,10 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         animRow.onChange = { [weak self] in self?.settings.animationMs = $0 < 5 ? 0 : $0.rounded() }
         dimRowItem = NSMenuItem(); dimRowItem.view = dimRow
         blurRowItem = NSMenuItem(); blurRowItem.view = blurRow
+        updateRow = UpdateRow()
+        updateRow.onPress = { [weak self] in self?.checkForUpdates() }
+        updateRow.setChecking(updateCheckInProgress)
+        let updateItem = NSMenuItem(); updateItem.view = updateRow
         let grainItem = NSMenuItem(); grainItem.view = grainRow
         let animItem = NSMenuItem(); animItem.view = animRow
 
@@ -448,6 +564,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             iconItem,
             languageItem,
             loginItem,
+            updateItem,
             // No ⌘Q: a shortcut reserves a column on the right for every item and widens the menu.
             NSMenuItem(title: L("Quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: ""),
         ]
@@ -524,6 +641,30 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         settings.language = AppLanguage(rawValue: sender.tag) ?? .auto
     }
     @objc private func openPermissions() { Permissions.openSettings() }
+
+    private var updateCheckInProgress = false
+
+    /// Shows the spinner in the menu while GitHub answers (at least briefly, so a fast answer is still noticed),
+    /// then closes the menu and shows the result.
+    private func checkForUpdates() {
+        guard !updateCheckInProgress else { return }
+        updateCheckInProgress = true
+        updateRow.setChecking(true)
+        let started = Date()
+        UpdateChecker.fetchLatest { [weak self] result in
+            DispatchQueue.main.async {
+                let wait = max(0, 0.8 - Date().timeIntervalSince(started))
+                DispatchQueue.main.asyncAfter(deadline: .now() + wait) {
+                    guard let self else { return }
+                    self.updateCheckInProgress = false
+                    self.updateRow.setChecking(false)
+                    self.menu.cancelTracking()
+                    // Let the menu close before the alert takes over.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { UpdateChecker.present(result) }
+                }
+            }
+        }
+    }
 
     @objc private func toggleLogin() {
         let service = SMAppService.mainApp
