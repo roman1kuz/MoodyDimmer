@@ -16,8 +16,19 @@ A macOS menu bar app that dims, blurs or adds film grain to everything except th
 
 ## Install
 
-Requires macOS 14 or later (developed and tested on macOS 27) and the Xcode Command Line Tools
-(`xcode-select --install`).
+Requires macOS 14 or later (developed and tested on macOS 27).
+
+- **Homebrew:** `brew install --cask roman1kuz/tap/moody-dimmer`; to update, `brew upgrade moody-dimmer`.
+- **Download:** the DMG from [Releases](https://github.com/roman1kuz/MoodyDimmer/releases/latest);
+  drag the app to Applications.
+
+Moody Dimmer isn't notarized by Apple (that takes a paid developer account), so macOS blocks its first launch, and the
+first launch after each update. To open it, go to *System Settings → Privacy & Security* and click *Open Anyway*.
+Accessibility access stays granted across updates.
+
+### Build from source
+
+Needs the Xcode Command Line Tools (`xcode-select --install`). A build you make yourself opens without the warning.
 
 ```sh
 git clone https://github.com/roman1kuz/MoodyDimmer.git && cd MoodyDimmer

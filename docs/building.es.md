@@ -44,3 +44,30 @@ El icono que se distribuye, `Resources/AppIcon.icon`, sigue las pautas de macOS 
 ventana trasera oscurecida y la delantera iluminada) sobre un relleno en degradado, sin sombras, brillos ni texturas
 integrados. macOS añade Liquid Glass y genera las versiones transparente y tintada. La compilación lo procesa con
 `actool` de Xcode; sin Xcode usa `AppIcon.icns` (la representación del sistema del mismo icono).
+
+## Publicaciones
+
+Las publicaciones las compila GitHub Actions (`.github/workflows/release.yml`) y las firma con el mismo certificado
+*Moody Dimmer Local Signing*, así que el acceso de Accesibilidad se mantiene entre actualizaciones.
+
+1. Pon la nueva versión en `Resources/Info.plist` (`CFBundleShortVersionString`) y haz un commit.
+2. Marca el commit con una etiqueta anotada y súbela; el mensaje de la etiqueta será la descripción de la publicación:
+   ```sh
+   git tag -a v1.0.1 -m "Correcciones …"
+   git push origin v1.0.1
+   ```
+3. El workflow comprueba que la etiqueta coincide con la versión, compila y firma el DMG, comprueba la firma y publica
+   la versión.
+4. Actualiza la fórmula de Homebrew: `./scripts/update-tap.sh 1.0.1`. Necesita `gh` con sesión iniciada en una cuenta
+   con permiso de escritura en `roman1kuz/homebrew-tap`.
+
+Ejecutar el workflow a mano (*Actions → Release → Run workflow*) compila el DMG sin publicar nada y lo adjunta a la
+ejecución.
+
+El workflow necesita dos secretos del repositorio: `CERT_P12_BASE64`, el certificado exportado con su clave privada
+como archivo .p12 y codificado en base64, y `CERT_P12_PASSWORD`, la contraseña de ese archivo. Guarda una copia del
+.p12 en un lugar seguro: con otro certificado macOS considera la app como otra distinta, y todos los usuarios tendrían
+que volver a dar el acceso de Accesibilidad.
+
+Un fork que publique sus propias compilaciones usa su propio certificado, su propio nombre y su propio icono (consulta
+[TRADEMARK.md](../TRADEMARK.md)).

@@ -17,8 +17,19 @@ activa.
 
 ## Instalación
 
-Requiere macOS 14 o posterior (desarrollada y probada en macOS 27) y las Command Line Tools de Xcode
-(`xcode-select --install`).
+Requiere macOS 14 o posterior (desarrollada y probada en macOS 27).
+
+- **Homebrew:** `brew install --cask roman1kuz/tap/moody-dimmer`; para actualizar, `brew upgrade moody-dimmer`.
+- **Descarga:** el DMG desde [Releases](https://github.com/roman1kuz/MoodyDimmer/releases/latest);
+  arrastra la app a Aplicaciones.
+
+Moody Dimmer no está notarizada por Apple (eso requiere una cuenta de desarrollador de pago), así que macOS bloquea su
+primer arranque, y el primero después de cada actualización. Para abrirla, ve a *Ajustes del Sistema → Privacidad y
+seguridad* y haz clic en *Abrir igualmente*. El acceso de Accesibilidad se mantiene entre actualizaciones.
+
+### Compilar desde el código
+
+Necesita las Command Line Tools de Xcode (`xcode-select --install`). Una compilación propia se abre sin el aviso.
 
 ```sh
 git clone https://github.com/roman1kuz/MoodyDimmer.git && cd MoodyDimmer
