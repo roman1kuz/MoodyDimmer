@@ -8,7 +8,7 @@ cask "moody-dimmer" do
   desc "Dims, blurs or adds film grain to everything except the active window"
   homepage "https://github.com/roman1kuz/MoodyDimmer"
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "Moody Dimmer.app"
 

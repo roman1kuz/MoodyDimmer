@@ -18,9 +18,18 @@ permissions:
 
 jobs:
   release:
-    runs-on: macos-26
+    # macOS 27 with Xcode 27, the same toolchain as local builds. The blur controls the backdrop layer inside
+    # NSVisualEffectView, whose behavior depends on the SDK the app is linked against: 1.0.0, built against the
+    # macOS 26 SDK, showed no blur on macOS 27.
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_27.2.app
+          xcodebuild -version
+          echo "SDK $(xcrun --show-sdk-version)"
 
       - name: Check the tag matches the app version
         if: startsWith(github.ref, 'refs/tags/')
