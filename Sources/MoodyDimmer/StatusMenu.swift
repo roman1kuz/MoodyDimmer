@@ -568,7 +568,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         menuBarRow = check("Dim Menu Bar") { $0.settings.dimMenuBar.toggle() }
         peekRow = check("Highlight Window Under Pointer") { $0.settings.highlightUnderPointer.toggle() }
         shakeRow = check("Shake Pointer to Toggle") { $0.settings.shakeToToggle.toggle() }
-        hapticsRow = check("Haptic Feedback") { $0.settings.haptics.toggle() }
+        hapticsRow = check("Trackpad Haptics") { $0.settings.haptics.toggle() }
         loginRow = check("Launch at Login") { $0.toggleLogin() }
         shortcutItem = item("Keyboard Shortcut", #selector(changeShortcut))
 

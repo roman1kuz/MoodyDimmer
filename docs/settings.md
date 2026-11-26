@@ -15,7 +15,7 @@ several in a row.
 | Hide While Dragging | on |
 | Dim Menu Bar | on |
 | Highlight Window Under Pointer | off |
-| Haptic Feedback | on |
+| Trackpad Haptics | on |
 | Dim / Blur / Grain | 50 % / off / off |
 | Animation | 150 ms |
 | Keyboard Shortcut | ⌃⌥⌘D |
@@ -61,11 +61,10 @@ desktop (Finder active without windows) and on an empty screen there's no effect
   active window, the desktop, the menu bar or the Dock brings the effect back. Only dimmed windows take part: not the
   desktop, the menu bar, the Dock or windows that are bright anyway. Off by default. While it's on, the app follows
   the pointer, at the same cost as *Shake Pointer to Toggle* (shared when both are on).
-- **Haptic Feedback**: soft taps of the Force Touch trackpad. While a slider is dragged, a tap at every 1 % step
-  that grows with the value (none at 0, a slightly firmer one at the end); when shaking the pointer toggles the
-  effect, a short buzz that swells when it comes on and fades when it goes off. Only for input from a trackpad:
-  with a mouse there are none. It works even with *Force Click and haptic feedback* turned off in System
-  Settings. On by default.
+- **Trackpad Haptics**: soft taps of the Force Touch trackpad. While a slider is dragged, a tap at every 1 % step that
+  grows with the value (none at 0, a slightly firmer one at the end); when shaking the pointer toggles the effect, a
+  short buzz that swells when it comes on and fades when it goes off. Only for input from a trackpad: with a mouse
+  there are none. It works even with *Force Click and haptic feedback* turned off in System Settings. On by default.
 
 ## Effect
 

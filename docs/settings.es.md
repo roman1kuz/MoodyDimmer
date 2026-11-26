@@ -15,7 +15,7 @@ así que puedes cambiar varias seguidas.
 | Quitar el efecto al arrastrar | activado |
 | Oscurecer la barra de menús | activado |
 | Iluminar la ventana bajo el puntero | desactivado |
-| Respuesta háptica | activado |
+| Respuesta háptica del trackpad | activado |
 | Oscurecer / Desenfoque / Grano | 50 % / no / no |
 | Animación | 150 ms |
 | Atajo de teclado | ⌃⌥⌘D |
@@ -64,11 +64,11 @@ pierdan en el fondo oscurecido. En el escritorio (Finder activo sin ventanas) y 
   participan las ventanas oscurecidas: no el escritorio, la barra de menús, el Dock ni las ventanas que ya están
   iluminadas. Desactivado por defecto. Mientras está activado, la app sigue el puntero, con el mismo coste que *Agitar
   el puntero para alternar* (compartido si ambos están activados).
-- **Respuesta háptica**: toques suaves del trackpad Force Touch. Al arrastrar un control deslizante, un toque en
-  cada paso del 1 % que crece con el valor (ninguno en 0, uno algo más firme al final); cuando agitar el puntero
-  alterna el efecto, una vibración breve que crece al activarlo y se apaga al desactivarlo. Solo con un trackpad:
-  con un ratón no hay ninguna. Funciona incluso con *Clic fuerte y respuesta háptica* desactivado en Ajustes del
-  Sistema. Activado por defecto.
+- **Respuesta háptica del trackpad**: toques suaves del trackpad Force Touch. Al arrastrar un control deslizante, un
+  toque en cada paso del 1 % que crece con el valor (ninguno en 0, uno algo más firme al final); cuando agitar el
+  puntero alterna el efecto, una vibración breve que crece al activarlo y se apaga al desactivarlo. Solo con un
+  trackpad: con un ratón no hay ninguna. Funciona incluso con *Clic fuerte y respuesta háptica* desactivado en Ajustes
+  del Sistema. Activado por defecto.
 
 ## Efecto
 
