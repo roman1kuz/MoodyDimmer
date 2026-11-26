@@ -19,7 +19,8 @@ activa.
 
 Requiere macOS 26 o posterior (desarrollada y probada en macOS 27).
 
-- **Homebrew:** `brew install --cask roman1kuz/tap/moody-dimmer`; para actualizar, `brew upgrade moody-dimmer`.
+- **Homebrew:** `brew install --cask roman1kuz/tap/moody-dimmer`;
+  para actualizar, `brew update && brew upgrade moody-dimmer`.
 - **Descarga:** el DMG desde [Releases](https://github.com/roman1kuz/MoodyDimmer/releases/latest);
   arrastra la app a Aplicaciones.
 

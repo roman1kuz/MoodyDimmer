@@ -91,7 +91,8 @@ enum UpdateChecker {
             alert.runModal()
 
         case .success(let release):
-            let command = "brew upgrade \(caskToken)"
+            // brew refreshes its taps on its own at most once a day, so update first to see a fresh release.
+            let command = "brew update && brew upgrade \(caskToken)"
             let brew = installedWithHomebrew
             alert.messageText = String(format: L("Moody Dimmer %@ is available"), release.version)
             var info = String(format: L("You have version %@."), currentVersion)

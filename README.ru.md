@@ -19,7 +19,8 @@ _**M**y **O**ccasionally **O**dd **D**immer **Y**ields **D**arkness, **I**f **M*
 
 Нужна macOS 26 или новее (разработано и проверено на macOS 27).
 
-- **Homebrew:** `brew install --cask roman1kuz/tap/moody-dimmer`; обновление — `brew upgrade moody-dimmer`.
+- **Homebrew:** `brew install --cask roman1kuz/tap/moody-dimmer`;
+  обновление — `brew update && brew upgrade moody-dimmer`.
 - **Скачать:** DMG со страницы [Releases](https://github.com/roman1kuz/MoodyDimmer/releases/latest);
   перетащите приложение в «Программы».
 
