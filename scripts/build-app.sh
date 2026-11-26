@@ -66,7 +66,16 @@ fi
 rm -f "$STAGE/actool.log" "$STAGE/icon.plist"
 ln -s /Applications "$STAGE/Applications"
 rm -f "$DMG"
-hdiutil create -quiet -volname "$NAME" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG"
+# hdiutil now and then fails with "Resource busy", mostly on CI machines: try a few times.
+for attempt in 1 2 3; do
+    if hdiutil create -volname "$NAME" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG" >"$STAGE.hdiutil.log" 2>&1; then
+        break
+    fi
+    echo "hdiutil failed (attempt $attempt):"; sed 's/^/  /' "$STAGE.hdiutil.log"
+    (( attempt == 3 )) && exit 1
+    sleep 3
+done
+rm -f "$STAGE.hdiutil.log"
 $SIGNED_WITH_CERT && codesign --force --sign "$IDENTITY" "$DMG"
 
 if [[ "${1:-}" == "--install" ]]; then
