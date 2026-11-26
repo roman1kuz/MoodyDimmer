@@ -86,8 +86,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             overlays.rebuildScreens()
         case .quickToggle:
             updateQuickToggle()
-        case .effect:
-            overlays.applyEffects(animated: true)
         case .strength:
             overlays.applyEffects(animated: false)
         case .language:

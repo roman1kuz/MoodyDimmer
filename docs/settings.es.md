@@ -3,7 +3,8 @@
 # Ajustes
 
 Todo está en el menú del icono de Moody Dimmer en la barra de menús. Los cambios se aplican al instante y se
-recuerdan. El menú está en inglés, ruso y español.
+recuerdan. El menú está en inglés, ruso y español. Las opciones con marca se activan y desactivan sin cerrar el menú,
+así que puedes cambiar varias seguidas.
 
 ## Valores por defecto
 
@@ -13,8 +14,7 @@ recuerdan. El menú está en inglés, ruso y español.
 | Mantener iluminado | Todas las ventanas de la app |
 | Quitar el efecto al arrastrar | activado |
 | Oscurecer la barra de menús | activado |
-| Efecto | Oscurecer |
-| Oscurecer / Desenfoque / Grano | 50 % / 80 % / no |
+| Oscurecer / Desenfoque / Grano | 50 % / no / no |
 | Animación | 150 ms |
 | Atajo de teclado | ⌃⌥⌘D |
 | Agitar el puntero para alternar | activado |
@@ -57,11 +57,8 @@ pierdan en el fondo oscurecido. En el escritorio (Finder activo sin ventanas) y 
 
 ## Efecto
 
-- **Oscurecer**: una capa negra sobre el fondo.
-- **Desenfoque**: un desenfoque del fondo.
-- **Oscurecer + desenfoque**: ambos.
-
-Cada uno tiene su propio control de intensidad; solo se muestran los del efecto elegido.
+Tres controles definen los efectos y se pueden combinar: **Oscurecer** (una capa negra sobre el fondo), **Desenfoque**
+(un desenfoque del fondo) y **Grano** (grano de película estático). Un control en 0 desactiva su efecto.
 
 ## Controles deslizantes
 
@@ -70,8 +67,8 @@ actual aparece a la derecha. El símbolo del control se mueve con el valor.
 
 | Control | Rango | Cómo se traduce en el efecto |
 |---|---|---|
-| Oscurecer | 0–100 % | opacidad de la capa negra = x (lineal; 100 % es negro total) |
-| Desenfoque | 0–100 % | radio = 50 × x^1,6 pt: 10 % ≈ 1, 30 % ≈ 7, 50 % ≈ 17, 80 % ≈ 35, 100 % = 50 |
+| Oscurecer | no–100 % | opacidad de la capa negra = x (lineal; 100 % es negro total) |
+| Desenfoque | no–100 % | radio = 50 × x^1,6 pt: 10 % ≈ 1, 30 % ≈ 7, 50 % ≈ 17, 80 % ≈ 35, 100 % = 50 |
 | Grano | no–100 % | grano de película estático, opacidad = 0,5 × x^0,75 (los valores bajos siguen siendo visibles) |
 | Animación | instantánea–400 ms | cuánto duran los cambios de foco y de efecto; *instantánea* cambia al momento |
 

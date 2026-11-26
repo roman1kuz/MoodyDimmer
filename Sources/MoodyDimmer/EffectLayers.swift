@@ -11,8 +11,8 @@ struct EffectParams: Equatable {
     static func from(_ s: Settings) -> EffectParams {
         // Dim: black is composited in gamma space, so linear opacity already looks even.
         // 100% is fully black: everything but the bright windows disappears.
-        let dim = s.effect.hasDim ? Float(s.dimStrength) : 0
-        let blur = s.effect.hasBlur ? s.blurStrength : 0
+        let dim = Float(s.dimStrength)
+        let blur = s.blurStrength
         // Grain: barely visible at low values, so the curve is concave (x^0.75).
         let grain = s.grainStrength > 0 ? Float(0.5 * pow(s.grainStrength, 0.75)) : 0
         return EffectParams(dimOpacity: dim, blur: blur, grainOpacity: grain)

@@ -38,7 +38,7 @@ DEV_DIR="$(xcode-select -p 2>/dev/null)"
 [[ "$DEV_DIR" == *CommandLineTools* && -d /Applications/Xcode.app ]] && DEV_DIR=/Applications/Xcode.app/Contents/Developer
 # actool resolves relative paths against its own working directory, so pass absolute ones.
 if DEVELOPER_DIR="$DEV_DIR" xcrun actool --compile "$PWD/$APP/Contents/Resources" --platform macosx \
-        --minimum-deployment-target 14.0 --app-icon AppIcon --output-partial-info-plist "$PWD/$STAGE/icon.plist" \
+        --minimum-deployment-target 26.0 --app-icon AppIcon --output-partial-info-plist "$PWD/$STAGE/icon.plist" \
         --errors --warnings "$PWD/Resources/AppIcon.icon" >"$STAGE/actool.log" 2>&1; then
     /usr/libexec/PlistBuddy -c "Add :CFBundleIconName string AppIcon" "$APP/Contents/Info.plist"
     echo "App icon: Icon Composer icon"

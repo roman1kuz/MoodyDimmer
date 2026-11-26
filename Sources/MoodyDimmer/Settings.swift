@@ -8,16 +8,6 @@ enum FocusMode: Int {
     case app = 1
 }
 
-/// Background effect kind.
-enum EffectKind: Int {
-    case dim = 0
-    case blur = 1
-    case both = 2
-
-    var hasDim: Bool { self != .blur }
-    var hasBlur: Bool { self != .dim }
-}
-
 /// Which setting changed: decides what needs recomputing.
 enum SettingsChange {
     case enabled
@@ -25,7 +15,6 @@ enum SettingsChange {
     case dragBehavior
     case menuBarCoverage
     case quickToggle
-    case effect       // discrete change: animated
     case strength     // sliders: applied instantly
     case animation
     case menuBarIcon
@@ -49,7 +38,7 @@ final class Settings {
         static let shortcutModifiers = "shortcutModifiers"
         static let shortcutDisplay = "shortcutDisplay"
         static let shakeToToggle = "shakeToToggle"
-        static let effect = "effect"
+        static let legacyEffect = "effect"   // 0.x–1.0: dim / blur / both, before the sliders alone chose it
         static let dim = "dimStrength"
         static let blur = "blurStrength"
         static let grain = "grainStrength"
@@ -60,6 +49,7 @@ final class Settings {
     }
 
     private init() {
+        migrateEffectKind()  // before registering defaults: it checks which values were actually stored
         d.register(defaults: [
             Key.enabled: true,
             Key.focusMode: FocusMode.app.rawValue,
@@ -69,15 +59,26 @@ final class Settings {
             Key.shortcutModifiers: Int(Shortcut.default.modifiers),
             Key.shortcutDisplay: Shortcut.default.display,
             Key.shakeToToggle: true,
-            Key.effect: EffectKind.dim.rawValue,
             Key.dim: 0.5,
-            Key.blur: 0.8,
+            Key.blur: 0.0,
             Key.grain: 0.0,
             Key.animation: 150.0,
             Key.menuBarIcon: MenuBarIconStyle.cascade.rawValue,
             Key.menuBarIconTheme: MenuBarIconTheme.auto.rawValue,
             Key.language: AppLanguage.auto.rawValue,
         ])
+    }
+
+    /// Up to 1.0 an effect kind picked dim, blur or both, and the strength of an unpicked effect was kept but
+    /// unused. Now a slider at 0 means that effect is off, so zero the strength of whatever wasn't picked.
+    private func migrateEffectKind() {
+        guard d.object(forKey: Key.legacyEffect) != nil else { return }
+        let kind = d.integer(forKey: Key.legacyEffect)   // 0 dim, 1 blur, 2 both
+        // The old blur default (0.8) applied without being stored; the new default is 0.
+        if kind != 0, d.object(forKey: Key.blur) == nil { d.set(0.8, forKey: Key.blur) }
+        if kind == 0 { d.set(0.0, forKey: Key.blur) }
+        if kind == 1 { d.set(0.0, forKey: Key.dim) }
+        d.removeObject(forKey: Key.legacyEffect)
     }
 
     var enabled: Bool {
@@ -124,18 +125,13 @@ final class Settings {
         set { d.set(newValue, forKey: Key.shakeToToggle); onChange?(.quickToggle) }
     }
 
-    var effect: EffectKind {
-        get { EffectKind(rawValue: d.integer(forKey: Key.effect)) ?? .dim }
-        set { d.set(newValue.rawValue, forKey: Key.effect); onChange?(.effect) }
-    }
-
-    /// 0…1
+    /// 0…1, 0 = off
     var dimStrength: Double {
         get { d.double(forKey: Key.dim) }
         set { d.set(newValue, forKey: Key.dim); onChange?(.strength) }
     }
 
-    /// 0…1
+    /// 0…1, 0 = off
     var blurStrength: Double {
         get { d.double(forKey: Key.blur) }
         set { d.set(newValue, forKey: Key.blur); onChange?(.strength) }

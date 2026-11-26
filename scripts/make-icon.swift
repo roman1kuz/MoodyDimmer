@@ -379,7 +379,7 @@ try? fm.removeItem(at: tmpOut)
 try fm.createDirectory(at: tmpOut, withIntermediateDirectories: true)
 let actool = Process()
 actool.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-actool.arguments = ["actool", "--compile", tmpOut.path, "--platform", "macosx", "--minimum-deployment-target", "14.0",
+actool.arguments = ["actool", "--compile", tmpOut.path, "--platform", "macosx", "--minimum-deployment-target", "26.0",
                     "--app-icon", "AppIcon", "--output-partial-info-plist", tmpOut.appendingPathComponent("p.plist").path, icon.path]
 var env = ProcessInfo.processInfo.environment
 if fm.fileExists(atPath: "/Applications/Xcode.app") { env["DEVELOPER_DIR"] = "/Applications/Xcode.app/Contents/Developer" }

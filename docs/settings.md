@@ -2,8 +2,9 @@
 
 # Settings
 
-Everything is in the menu behind the Moody Dimmer icon in the menu bar. Changes apply at once and are remembered.
-The menu is available in English, Russian and Spanish.
+Everything is in the menu behind the Moody Dimmer icon in the menu bar. Changes apply at once and are remembered. The
+menu is available in English, Russian and Spanish. Checkmark items switch without closing the menu, so you can change
+several in a row.
 
 ## Defaults
 
@@ -13,8 +14,7 @@ The menu is available in English, Russian and Spanish.
 | Keep Bright | All App Windows |
 | Hide While Dragging | on |
 | Dim Menu Bar | on |
-| Effect | Dim |
-| Dim / Blur / Grain | 50 % / 80 % / off |
+| Dim / Blur / Grain | 50 % / off / off |
 | Animation | 150 ms |
 | Keyboard Shortcut | ⌃⌥⌘D |
 | Shake Pointer to Toggle | on |
@@ -55,11 +55,8 @@ desktop (Finder active without windows) and on an empty screen there's no effect
 
 ## Effect
 
-- **Dim**: a black layer over the background.
-- **Blur**: a blur of the background.
-- **Dim + Blur**: both.
-
-Each one has its own strength slider; only the sliders of the chosen effect are shown.
+Three sliders set the effects, and they combine: **Dim** (a black layer over the background), **Blur** (a blur of the
+background) and **Grain** (static film grain). A slider at 0 turns its effect off.
 
 ## Sliders
 
@@ -68,8 +65,8 @@ the right. The symbol inside the slider moves with the value.
 
 | Slider | Range | How it maps to the effect |
 |---|---|---|
-| Dim | 0–100 % | black layer opacity = x (linear; 100 % is fully black) |
-| Blur | 0–100 % | radius = 50 × x^1.6 pt: 10 % ≈ 1, 30 % ≈ 7, 50 % ≈ 17, 80 % ≈ 35, 100 % = 50 |
+| Dim | off–100 % | black layer opacity = x (linear; 100 % is fully black) |
+| Blur | off–100 % | radius = 50 × x^1.6 pt: 10 % ≈ 1, 30 % ≈ 7, 50 % ≈ 17, 80 % ≈ 35, 100 % = 50 |
 | Grain | off–100 % | static film grain, opacity = 0.5 × x^0.75 (low values are still visible) |
 | Animation | instant–400 ms | how long focus changes and effect changes take; *instant* switches at once |
 

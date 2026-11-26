@@ -310,24 +310,19 @@ private final class SectionHeader: NSView {
     }
 }
 
-/// "Check for Updates…" as a hand-made menu row: a regular item closes the menu on click, so the progress
-/// would be invisible. This row keeps the menu open, shows "Checking for Updates…" with a spinner, and the
-/// owner closes the menu when the result is ready. It draws the same highlight as the system items.
-final class UpdateRow: NSView {
+/// A menu row drawn by hand that looks like a regular item but keeps the menu open when clicked: a regular item
+/// closes the menu, which gets in the way when changing several settings in a row. It draws the same highlight
+/// as the system items (accent color, 5 pt from the menu edges, full row height) and the same checkmark column.
+class MenuRow: NSView {
     var onPress: (() -> Void)?
-    private(set) var isChecking = false
-    private let label = NSTextField(labelWithString: "")
-    private var spinnerStep = 0
-    private var spinnerTimer: Timer?
-    private static let height: CGFloat = 24
-    private static let spinnerSize: CGFloat = 14
+    let label = NSTextField(labelWithString: "")
+    static let height: CGFloat = 24
 
-    override init(frame: NSRect) {
-        // Wide enough for the longer of the two titles plus the spinner; the menu grows to fit if needed.
+    /// Width for the given titles plus `extra` on the right; the menu grows to fit the widest row.
+    init(titles: [String], extra: CGFloat = 0) {
         let font = NSFont.menuFont(ofSize: 0)
-        let text = [L("Check for Updates…"), L("Checking for Updates…")]
-            .map { ceil(($0 as NSString).size(withAttributes: [.font: font]).width) }.max() ?? 150
-        let width = SliderRow.leading + text + 12 + Self.spinnerSize + SliderRow.trailing
+        let text = titles.map { ceil(($0 as NSString).size(withAttributes: [.font: font]).width) }.max() ?? 100
+        let width = SliderRow.leading + text + extra + SliderRow.trailing
         super.init(frame: NSRect(x: 0, y: 0, width: width, height: Self.height))
         autoresizingMask = [.width]
         label.font = font
@@ -337,11 +332,107 @@ final class UpdateRow: NSView {
         addSubview(label)
         setAccessibilityElement(true)
         setAccessibilityRole(.menuItem)
-        updateText()
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
+
+    /// Whether the row reacts to clicks and highlights; subclasses turn it off while busy.
+    var isActive: Bool { true }
+
+    // The menu sets `isHighlighted` on view items but doesn't redraw them, so hover is tracked here too.
+    private var hovered = false
+    var highlighted: Bool { isActive && (hovered || enclosingMenuItem?.isHighlighted == true) }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        trackingAreas.forEach(removeTrackingArea)
+        addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                                       owner: self))
+    }
+
+    override func mouseEntered(with event: NSEvent) { hovered = true; needsDisplay = true }
+    override func mouseExited(with event: NSEvent) { hovered = false; needsDisplay = true }
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        hovered = false  // the menu was closed and reopened
+    }
+
+    /// Text and symbol color for the current state.
+    var foreground: NSColor {
+        !isActive ? .secondaryLabelColor : highlighted ? .selectedMenuItemTextColor : .labelColor
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        if highlighted {
+            NSColor.controlAccentColor.setFill()
+            NSBezierPath(roundedRect: bounds.insetBy(dx: 5, dy: 0), xRadius: 8, yRadius: 8).fill()
+        }
+        label.textColor = foreground
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        guard isActive, bounds.contains(convert(event.locationInWindow, from: nil)) else { return }
+        onPress?()
+        needsDisplay = true
+    }
+
+    override func accessibilityPerformPress() -> Bool {
+        guard isActive else { return false }
+        onPress?()
+        return true
+    }
+}
+
+/// A checkbox (or radio) item that stays open: the checkmark sits in the same column as on system items.
+final class CheckRow: MenuRow {
+    var isOn = false {
+        didSet {
+            guard isOn != oldValue else { return }
+            needsDisplay = true
+            setAccessibilityValue(isOn)
+        }
+    }
+
+    init(title: String) {
+        super.init(titles: [title])
+        label.stringValue = title
+        setAccessibilityLabel(title)
+        setAccessibilityValue(false)
+    }
+
+    private static let checkmark = NSImage(systemSymbolName: "checkmark", accessibilityDescription: nil)?
+        .withSymbolConfiguration(.init(pointSize: 12, weight: .semibold))
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard isOn, let mark = Self.checkmark else { return }
+        let tinted = NSImage(size: mark.size, flipped: false) { r in
+            mark.draw(in: r)
+            self.foreground.set()
+            r.fill(using: .sourceAtop)
+            return true
+        }
+        let x = SliderRow.leading - 7 - mark.size.width
+        tinted.draw(in: NSRect(x: x, y: ((bounds.height - mark.size.height) / 2).rounded(),
+                               width: mark.size.width, height: mark.size.height))
+    }
+}
+
+/// "Check for Updates…": while GitHub answers, the row shows "Checking for Updates…" with a spinner,
+/// and the owner closes the menu when the result is ready.
+final class UpdateRow: MenuRow {
+    private(set) var isChecking = false
+    private var spinnerStep = 0
+    private var spinnerTimer: Timer?
+    private static let spinnerSize: CGFloat = 14
+
+    init() {
+        super.init(titles: [L("Check for Updates…"), L("Checking for Updates…")], extra: 12 + Self.spinnerSize)
+        updateText()
+    }
+
+    override var isActive: Bool { !isChecking }
 
     func setChecking(_ checking: Bool) {
         guard checking != isChecking else { return }
@@ -361,37 +452,13 @@ final class UpdateRow: NSView {
         needsDisplay = true
     }
 
-    /// The menu sets `isHighlighted` on view items but doesn't redraw them, so hover is tracked here too.
-    private var hovered = false
-    private var highlighted: Bool { !isChecking && (hovered || enclosingMenuItem?.isHighlighted == true) }
-
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        trackingAreas.forEach(removeTrackingArea)
-        addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
-                                       owner: self))
-    }
-
-    override func mouseEntered(with event: NSEvent) { hovered = true; needsDisplay = true }
-    override func mouseExited(with event: NSEvent) { hovered = false; needsDisplay = true }
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        hovered = false  // the menu was closed and reopened
-    }
-
     private func updateText() {
         label.stringValue = isChecking ? L("Checking for Updates…") : L("Check for Updates…")
-        label.textColor = isChecking ? .secondaryLabelColor : highlighted ? .selectedMenuItemTextColor : .labelColor
         setAccessibilityLabel(label.stringValue)
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        // Same highlight as the system items: accent color, 5 pt from the menu edges, full row height.
-        if highlighted {
-            NSColor.controlAccentColor.setFill()
-            NSBezierPath(roundedRect: bounds.insetBy(dx: 5, dy: 0), xRadius: 8, yRadius: 8).fill()
-        }
-        updateText()
+        super.draw(dirtyRect)
         guard isChecking else { return }
         // Spinner: 8 spokes, the brightest one moving clockwise.
         let s = Self.spinnerSize
@@ -408,17 +475,6 @@ final class UpdateRow: NSView {
             path.stroke()
         }
     }
-
-    override func mouseUp(with event: NSEvent) {
-        guard !isChecking, bounds.contains(convert(event.locationInWindow, from: nil)) else { return }
-        onPress?()
-    }
-
-    override func accessibilityPerformPress() -> Bool {
-        guard !isChecking else { return false }
-        onPress?()
-        return true
-    }
 }
 
 final class StatusMenu: NSObject, NSMenuDelegate {
@@ -431,19 +487,14 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 
     // Items are (re)created in buildMenu(), so a language change just rebuilds the menu.
     private var headerRow: HeaderRow!
-    private var modeWindowItem: NSMenuItem!
-    private var modeAppItem: NSMenuItem!
-    private var hideDragItem: NSMenuItem!
-    private var menuBarItem: NSMenuItem!
-    private var effectDimItem: NSMenuItem!
-    private var effectBlurItem: NSMenuItem!
-    private var effectBothItem: NSMenuItem!
-    private var dimRowItem: NSMenuItem!
-    private var blurRowItem: NSMenuItem!
-    private var loginItem: NSMenuItem!
+    private var modeWindowRow: CheckRow!
+    private var modeAppRow: CheckRow!
+    private var hideDragRow: CheckRow!
+    private var menuBarRow: CheckRow!
+    private var loginRow: CheckRow!
     private var updateRow: UpdateRow!
     private var shortcutItem: NSMenuItem!
-    private var shakeItem: NSMenuItem!
+    private var shakeRow: CheckRow!
     private var permissionItem: NSMenuItem!
     private var iconStyleItems: [NSMenuItem] = []
     private var iconThemeItems: [NSMenuItem] = []
@@ -483,16 +534,28 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         let headerItem = NSMenuItem()
         headerItem.view = headerRow
         permissionItem = item("Grant Accessibility Access…", #selector(openPermissions))
-        modeWindowItem = item("Active Window Only", #selector(setModeWindow))
-        modeAppItem = item("All App Windows", #selector(setModeApp))
-        hideDragItem = item("Hide While Dragging", #selector(toggleHideDrag))
-        menuBarItem = item("Dim Menu Bar", #selector(toggleMenuBar))
-        effectDimItem = item("Dim", #selector(setEffect(_:)), tag: EffectKind.dim.rawValue)
-        effectBlurItem = item("Blur", #selector(setEffect(_:)), tag: EffectKind.blur.rawValue)
-        effectBothItem = item("Dim + Blur", #selector(setEffect(_:)), tag: EffectKind.both.rawValue)
-        loginItem = item("Launch at Login", #selector(toggleLogin))
+        // Settings that are often changed several at a time keep the menu open (see MenuRow).
+        func check(_ title: String, _ action: @escaping (StatusMenu) -> Void) -> CheckRow {
+            let row = CheckRow(title: L(title))
+            row.onPress = { [weak self] in
+                guard let self else { return }
+                action(self)
+                self.sync()
+            }
+            return row
+        }
+        func rowItem(_ view: NSView) -> NSMenuItem {
+            let i = NSMenuItem()
+            i.view = view
+            return i
+        }
+        modeWindowRow = check("Active Window Only") { $0.settings.focusMode = .window }
+        modeAppRow = check("All App Windows") { $0.settings.focusMode = .app }
+        hideDragRow = check("Hide While Dragging") { $0.settings.hideWhileDragging.toggle() }
+        menuBarRow = check("Dim Menu Bar") { $0.settings.dimMenuBar.toggle() }
+        shakeRow = check("Shake Pointer to Toggle") { $0.settings.shakeToToggle.toggle() }
+        loginRow = check("Launch at Login") { $0.toggleLogin() }
         shortcutItem = item("Keyboard Shortcut", #selector(changeShortcut))
-        shakeItem = item("Shake Pointer to Toggle", #selector(toggleShake))
 
         let iconItem = item("Menu Bar Icon", nil)
         let iconMenu = NSMenu()
@@ -524,16 +587,18 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         languageMenu.insertItem(.separator(), at: 1)
         languageItem.submenu = languageMenu
 
-        dimRow = SliderRow(title: L("Dim"), symbol: "moon.fill", range: 0...1) { "\(Int(($0 * 100).rounded())) %" }
-        blurRow = SliderRow(title: L("Blur"), symbol: "drop.fill", range: 0...1) { "\(Int(($0 * 100).rounded())) %" }
-        grainRow = SliderRow(title: L("Grain"), symbol: "circle.grid.3x3.fill", range: 0...1) { $0 < 0.005 ? L("off") : "\(Int(($0 * 100).rounded())) %" }
+        // Each effect is off at 0, so the sliders also choose which effects are on.
+        let percentOrOff: (Double) -> String = { $0 < 0.005 ? L("off") : "\(Int(($0 * 100).rounded())) %" }
+        dimRow = SliderRow(title: L("Dim"), symbol: "moon.fill", range: 0...1, format: percentOrOff)
+        blurRow = SliderRow(title: L("Blur"), symbol: "drop.fill", range: 0...1, format: percentOrOff)
+        grainRow = SliderRow(title: L("Grain"), symbol: "circle.grid.3x3.fill", range: 0...1, format: percentOrOff)
         animRow = SliderRow(title: L("Animation"), symbol: "timer", range: 0...400) { $0 < 5 ? L("instant") : String(format: L("%d ms"), Int($0.rounded())) }
-        dimRow.onChange = { [weak self] in self?.settings.dimStrength = $0 }
-        blurRow.onChange = { [weak self] in self?.settings.blurStrength = $0 }
+        dimRow.onChange = { [weak self] in self?.settings.dimStrength = $0 < 0.005 ? 0 : $0 }
+        blurRow.onChange = { [weak self] in self?.settings.blurStrength = $0 < 0.005 ? 0 : $0 }
         grainRow.onChange = { [weak self] in self?.settings.grainStrength = $0 < 0.005 ? 0 : $0 }
         animRow.onChange = { [weak self] in self?.settings.animationMs = $0 < 5 ? 0 : $0.rounded() }
-        dimRowItem = NSMenuItem(); dimRowItem.view = dimRow
-        blurRowItem = NSMenuItem(); blurRowItem.view = blurRow
+        let dimItem = NSMenuItem(); dimItem.view = dimRow
+        let blurItem = NSMenuItem(); blurItem.view = blurRow
         updateRow = UpdateRow()
         updateRow.onPress = { [weak self] in self?.checkForUpdates() }
         updateRow.setChecking(updateCheckInProgress)
@@ -546,32 +611,36 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             permissionItem,
             .separator(),
             header(L("Keep Bright")),
-            modeWindowItem, modeAppItem,
+            rowItem(modeWindowRow), rowItem(modeAppRow),
             .separator(),
             header(L("Behavior")),
-            hideDragItem,
-            menuBarItem,
+            rowItem(hideDragRow),
+            rowItem(menuBarRow),
             .separator(),
             header(L("Effect")),
-            effectDimItem, effectBlurItem, effectBothItem,
-            .separator(),
-            dimRowItem, blurRowItem, grainItem, animItem,
+            dimItem, blurItem, grainItem, animItem,
             .separator(),
             header(L("Quick Toggle")),
             shortcutItem,
-            shakeItem,
+            rowItem(shakeRow),
             .separator(),
             iconItem,
             languageItem,
-            loginItem,
+            rowItem(loginRow),
             updateItem,
             // No ⌘Q: a shortcut reserves a column on the right for every item and widens the menu.
             NSMenuItem(title: L("Quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: ""),
         ]
         items.forEach(menu.addItem)
+        // The checkmarks live in hand-made rows now, so no regular item has a state and the menu would drop its
+        // checkmark column, moving their text left of the rest. A blank off-state image keeps the column: at 12 pt
+        // the text lines up with the rows (measured on macOS 27).
+        for i in menu.items where i.view == nil && !i.isSeparatorItem { i.offStateImage = Self.stateColumnSpacer }
         permissionItem.isHidden = Permissions.isTrusted
         sync()
     }
+
+    private static let stateColumnSpacer = NSImage(size: NSSize(width: 12, height: 12))
 
     private func header(_ title: String) -> NSMenuItem {
         let item = NSMenuItem()
@@ -593,18 +662,13 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         let language = settings.language
         for item in languageItems { item.state = item.tag == language.rawValue ? .on : .off }
         statusItem.button?.appearsDisabled = !settings.enabled  // dimmed icon when the effect is off
-        modeWindowItem.state = settings.focusMode == .window ? .on : .off
-        modeAppItem.state = settings.focusMode == .app ? .on : .off
-        hideDragItem.state = settings.hideWhileDragging ? .on : .off
-        menuBarItem.state = settings.dimMenuBar ? .on : .off
+        modeWindowRow.isOn = settings.focusMode == .window
+        modeAppRow.isOn = settings.focusMode == .app
+        hideDragRow.isOn = settings.hideWhileDragging
+        menuBarRow.isOn = settings.dimMenuBar
+        loginRow.isOn = SMAppService.mainApp.status == .enabled
         shortcutItem.title = "\(L("Keyboard Shortcut")): \(settings.shortcut?.display ?? L("None"))…"
-        shakeItem.state = settings.shakeToToggle ? .on : .off
-        let effect = settings.effect
-        effectDimItem.state = effect == .dim ? .on : .off
-        effectBlurItem.state = effect == .blur ? .on : .off
-        effectBothItem.state = effect == .both ? .on : .off
-        dimRowItem.isHidden = !effect.hasDim
-        blurRowItem.isHidden = !effect.hasBlur
+        shakeRow.isOn = settings.shakeToToggle
         dimRow.set(settings.dimStrength)
         blurRow.set(settings.blurStrength)
         grainRow.set(settings.grainStrength)
@@ -615,22 +679,13 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 
     func menuWillOpen(_ menu: NSMenu) {
         permissionItem.isHidden = Permissions.isTrusted
-        loginItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
         sync()
         onMenuWillOpen?()
     }
 
     // MARK: - Actions
 
-    @objc private func setModeWindow() { settings.focusMode = .window }
-    @objc private func setModeApp() { settings.focusMode = .app }
-    @objc private func toggleHideDrag() { settings.hideWhileDragging.toggle() }
-    @objc private func toggleMenuBar() { settings.dimMenuBar.toggle() }
-    @objc private func toggleShake() { settings.shakeToToggle.toggle() }
     @objc private func changeShortcut() { onChangeShortcut?() }
-    @objc private func setEffect(_ sender: NSMenuItem) {
-        settings.effect = EffectKind(rawValue: sender.tag) ?? .dim
-    }
     @objc private func setMenuBarIcon(_ sender: NSMenuItem) {
         settings.menuBarIcon = MenuBarIconStyle(rawValue: sender.tag) ?? .cascade
     }
@@ -666,15 +721,20 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         }
     }
 
-    @objc private func toggleLogin() {
+    private func toggleLogin() {
         let service = SMAppService.mainApp
         do {
             if service.status == .enabled { try service.unregister() } else { try service.register() }
         } catch {
-            let alert = NSAlert()
-            alert.messageText = L("Couldn't change launch at login")
-            alert.informativeText = error.localizedDescription
-            alert.runModal()
+            // The row keeps the menu open: close it before the alert takes over.
+            menu.cancelTracking()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                NSApp.activate()
+                let alert = NSAlert()
+                alert.messageText = L("Couldn't change launch at login")
+                alert.informativeText = error.localizedDescription
+                alert.runModal()
+            }
         }
     }
 }
