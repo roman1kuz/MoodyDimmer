@@ -77,10 +77,12 @@ Two ways to turn the effect on or off without opening the menu. Both work in any
 - **Keyboard Shortcut**: ⌃⌥⌘D by default. Click the item and press a new shortcut; it needs at least one of ⌘, ⌥ or
   ⌃. Esc cancels, Delete removes the shortcut. Letter keys are shown as in the Latin layout, whatever layout is
   active.
-- **Shake Pointer to Toggle**: shake the pointer in place, quickly and not too wide: about three quick left-right
-  wiggles within a second, each a few centimeters at most. Wide sweeps, slow back-and-forth moves, vertical or
-  diagonal moves, a zigzag that travels across the screen, pointing with an overshoot and dragging don't trigger it.
-  Turn it off if you don't use it: then the app stops receiving pointer moves altogether.
+- **Shake Pointer to Toggle**: shake the pointer quickly back and forth in place, in any direction (left and right, up
+  and down or diagonally), about three fast back-and-forth moves. Speed matters, not width: anything from a short
+  wiggle to a swing of about a third of the screen works, and a slight arc is fine. One shake toggles once; to toggle
+  again, hold the pointer still for a moment first. Slow back-and-forth moves, circling the pointer, a zigzag that
+  travels across the screen, pointing with an overshoot and dragging don't trigger it. Turn it off if you don't use
+  it: then the app stops receiving pointer moves altogether.
 
 ## Menu Bar Icon
 

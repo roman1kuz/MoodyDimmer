@@ -80,11 +80,13 @@ permisos adicionales.
 - **Atajo de teclado**: ⌃⌥⌘D por defecto. Haz clic en el elemento y pulsa un atajo nuevo; debe incluir al menos una
   de las teclas ⌘, ⌥ o ⌃. Esc cancela, Suprimir quita el atajo. Las letras se muestran como en la distribución
   latina, sea cual sea la distribución activa.
-- **Agitar el puntero para alternar**: agita el puntero sin moverlo del sitio, rápido y sin mucha amplitud: unos tres
-  movimientos rápidos a izquierda y derecha en un segundo, de unos pocos centímetros como mucho. No lo activan los
-  barridos amplios, los vaivenes lentos, los movimientos verticales o diagonales, un zigzag que cruza la pantalla, el
-  apuntar pasándose del objetivo ni arrastrar. Si no lo usas, desactívalo: así la app deja de recibir los movimientos
-  del puntero por completo.
+- **Agitar el puntero para alternar**: agita el puntero rápido de un lado a otro sin moverlo del sitio, en cualquier
+  dirección (izquierda y derecha, arriba y abajo o en diagonal), unos tres vaivenes rápidos. Importa la velocidad, no
+  la amplitud: sirve desde un movimiento corto hasta un barrido de un tercio de la pantalla, y un ligero arco no
+  importa. Cada sacudida alterna el efecto una sola vez; para volver a alternarlo, deja quieto el puntero un momento.
+  No lo activan los vaivenes lentos, los movimientos en círculo, un zigzag que cruza la pantalla, el apuntar pasándose
+  del objetivo ni arrastrar. Si no lo usas, desactívalo: así la app deja de recibir los movimientos del puntero por
+  completo.
 
 ## Icono de la barra de menús
 
