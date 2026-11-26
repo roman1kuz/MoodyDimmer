@@ -37,6 +37,10 @@ final class OverlayWindow: NSWindow {
         return f
     }
 
+    /// AppKit moves windows below the menu bar when they're shown or when displays change, which would shift the
+    /// overlay (and every hole in its mask) down by the menu bar's height. It stays exactly where it's put.
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
+
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 }

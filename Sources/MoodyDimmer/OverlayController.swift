@@ -134,7 +134,7 @@ final class OverlayController {
     private func place(_ s: ScreenOverlay, target t: FocusTarget) {
         let w = s.window
         s.transitioning = false
-        w.effectView.setMask(maskPath(holes: t.holes, screenFrame: s.screenFrame))
+        w.effectView.setMask(maskPath(holes: t.holes, frame: w.frame))
         w.wantVisible = true
         orderBelow(w, t.orderBelowID)
         w.effectView.windowDidOrderIn()
@@ -144,7 +144,8 @@ final class OverlayController {
     /// the windows that brighten or dim. The background never changes: no second overlay crossfading over the
     /// whole screen (which dims the background twice halfway through and visibly weakens the blur).
     private func switchWindows(_ s: ScreenOverlay, to t: FocusTarget, duration d: TimeInterval) {
-        let w = s.window, f = s.screenFrame
+        // The mask is in the window's own coordinates: computed from where the window actually is.
+        let w = s.window, f = w.frame
         let full = CGPath(rect: f, transform: nil)
         let none = CGMutablePath()
         let oldHoles = s.holes ?? none
@@ -154,7 +155,7 @@ final class OverlayController {
         let newHoles = t.holes ?? none
         let fixed: CGPath, fadeIn: CGPath, fadeOut: CGPath
         let before: () -> Void, after: () -> Void
-        let final = maskPath(holes: t.holes, screenFrame: f)
+        let final = maskPath(holes: t.holes, frame: f)
 
         if !t.coveredByOverlay {
             // The new window rose above the overlay (a click, ⌘Tab) and is bright at once. The overlay moves
@@ -180,9 +181,9 @@ final class OverlayController {
 
         s.transitioning = true
         w.effectView.transitionMask(
-            fixed: localPath(fixed, screenFrame: f),
-            fadeIn: localPath(fadeIn, screenFrame: f),
-            fadeOut: localPath(fadeOut, screenFrame: f),
+            fixed: localPath(fixed, frame: f),
+            fadeIn: localPath(fadeIn, frame: f),
+            fadeOut: localPath(fadeOut, frame: f),
             duration: d, before: before
         ) { [weak s] in
             guard let s, s.transitioning, s.window.wantVisible else { return }
@@ -248,14 +249,14 @@ final class OverlayController {
         }
     }
 
-    /// A global path in an overlay's window-local coordinates.
-    private func localPath(_ path: CGPath, screenFrame f: CGRect) -> CGPath {
+    /// A global path in an overlay's window-local coordinates (f: the window's frame).
+    private func localPath(_ path: CGPath, frame f: CGRect) -> CGPath {
         var toLocal = CGAffineTransform(translationX: -f.minX, y: -f.minY)
         return path.copy(using: &toLocal) ?? path
     }
 
     /// Where the effect is visible: the whole screen minus holes, in window-local coordinates.
-    private func maskPath(holes: CGPath?, screenFrame f: CGRect) -> CGPath? {
+    private func maskPath(holes: CGPath?, frame f: CGRect) -> CGPath? {
         guard let holes, holes.boundingBoxOfPath.intersects(f) else { return nil }
         let full = CGPath(rect: f, transform: nil)
         var toLocal = CGAffineTransform(translationX: -f.minX, y: -f.minY)
