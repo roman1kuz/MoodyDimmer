@@ -4,9 +4,13 @@ import os
 
 let log = Logger(subsystem: "io.github.roman1kuz.moodydimmer", category: "focus")
 
-/// What has to stay bright.
+/// What has to stay bright on one display.
+///
+/// With several displays each one keeps its own top window bright: the target of the display holding the active
+/// window (activeScreen) carries the targets of the others in `others`, each built the same way around the top
+/// window on that display. With Dim Active Display Only there are no others, and the other displays get no effect.
 struct FocusTarget: Equatable {
-    /// Top window of the active app.
+    /// Top window of the active app (on another display: that display's top window).
     let topID: CGWindowID
     /// The window the overlay goes right below: the top window, or the window under the pointer while the effect
     /// is moved below it (Highlight Window Under Pointer).
@@ -16,7 +20,7 @@ struct FocusTarget: Equatable {
     /// Screens fully covered by the active window (full screen video, app in full screen).
     /// No effect there: nothing to dim, and in a full screen Space the overlay would end up above the window.
     let fullscreenScreens: [CGRect]
-    /// The screen holding most of the top window (Dim Active Screen Only), global Cocoa coordinates.
+    /// The display this target is for: the one holding most of the top window, global Cocoa coordinates.
     let activeScreen: CGRect?
     /// The overlay already sits right below orderBelowID. If not, reorder even if everything else matches.
     let orderOK: Bool
@@ -39,10 +43,25 @@ struct FocusTarget: Equatable {
     let peekRegion: CGPath?
     /// Raw inputs for a cheap comparison.
     fileprivate let signature: [CGRect]
+    /// The targets of the other displays (only on the active display's target).
+    fileprivate(set) var others: [FocusTarget] = []
+
+    /// This target and the other displays' ones.
+    var all: [FocusTarget] { [self] + others }
+
+    /// The target for a display, or nil when it gets no effect (no window on it, or Dim Active Display Only).
+    func target(on screen: CGRect) -> FocusTarget? {
+        all.first { $0.activeScreen == screen }
+    }
+
+    /// The target for the display under a point, or nil when that display gets no effect.
+    func target(at p: CGPoint) -> FocusTarget? {
+        all.first { $0.activeScreen?.contains(p) == true }
+    }
 
     static func == (a: FocusTarget, b: FocusTarget) -> Bool {
         a.topID == b.topID && a.peekID == b.peekID && a.signature == b.signature && a.fullscreenScreens == b.fullscreenScreens
-            && a.activeScreen == b.activeScreen
+            && a.activeScreen == b.activeScreen && a.others == b.others
     }
 }
 
@@ -59,22 +78,37 @@ final class FocusTracker {
         }
     }
 
+    /// With several displays, whether the displays without the active window get the effect too, each around its
+    /// own top window (off: Dim Active Display Only).
+    var dimOtherScreens = true {
+        didSet {
+            guard dimOtherScreens != oldValue, running else { return }
+            refresh(force: true)
+        }
+    }
+
     /// Corner radius of the holes (≈ macOS window corner radius).
     var holeCornerRadius: CGFloat = 14
 
     private(set) var lastTarget: FocusTarget?
 
-    /// A dimmed window to show bright while the pointer rests on it (set by PeekWatcher); nil = none. It's dropped
-    /// when it's no longer on screen, no longer dimmed, or focus moves to another window.
+    /// A dimmed window to show bright while the pointer rests on it (set by PeekWatcher through `highlight`); nil =
+    /// none. It's dropped when it's no longer on screen, no longer dimmed, or the top window of its display changes.
     var peekWindowID: CGWindowID? {
         didSet {
             guard peekWindowID != oldValue else { return }
-            peekForTopID = peekWindowID == nil ? nil : lastTarget?.topID
+            if peekWindowID == nil { peekForTopID = nil }
             scheduleUpdate()
         }
     }
-    /// The active window when the highlight started.
+    /// The top window of the highlighted window's display when the highlight started.
     private var peekForTopID: CGWindowID?
+
+    /// Shows a dimmed window bright: `top` is the top window of its display now.
+    func highlight(_ id: CGWindowID, over top: CGWindowID) {
+        peekForTopID = top
+        if peekWindowID == id { scheduleUpdate() } else { peekWindowID = id }
+    }
     private var delivered = false
     private var running = false
     private var updatePending = false
@@ -244,7 +278,7 @@ final class FocusTracker {
         // or it is already terminating: that means "no active window".
         var target: FocusTarget?
         if let front, !front.isTerminated, !front.isHidden {
-            target = buildTarget(pid: front.processIdentifier)
+            target = buildTargets(pid: front.processIdentifier)
         }
         // The app was just launched and hasn't shown a window yet (heavy apps take seconds to open).
         // That isn't "no active window": keep the effect as is, without flicker. The window arrives via AX
@@ -262,16 +296,17 @@ final class FocusTracker {
         followingTopWindow = false
         if target == nil, !isDesktop(front) {
             followingTopWindow = true
-            if let pid = topWindowOwner() { target = buildTarget(pid: pid) }
+            if let pid = topWindowOwner() { target = buildTargets(pid: pid) }
         }
         // orderOK == false: the window is there but the overlay isn't right below it (the window rose after
         // we placed the overlay, or something got in between): reorder even if the target "didn't change".
-        if force || !delivered || target != lastTarget || target?.orderOK == false {
+        let misplaced = target?.all.contains { !$0.orderOK } == true
+        if force || !delivered || target != lastTarget || misplaced {
             if target == nil {
                 log.debug("no window to keep bright (\(front?.localizedName ?? "no frontmost app", privacy: .public))")
             } else if followingTopWindow, target != lastTarget {
                 log.debug("no active window: keeping the top window on screen bright")
-            } else if target?.orderOK == false && target == lastTarget {
+            } else if misplaced && target == lastTarget {
                 log.debug("reorder: overlay not directly under window")
             }
             lastTarget = target
@@ -452,21 +487,47 @@ final class FocusTracker {
         return front.bundleIdentifier == "com.apple.finder"
     }
 
-    /// Owner of the top normal window on screen (the window list is ordered front to back).
+    /// Owner of the top normal window on screen.
     private func topWindowOwner() -> pid_t? {
+        normalWindows(screens: NSScreen.screens.map(\.frame))?.first { $0.owner != ownPID && $0.rect != nil }?.owner
+    }
+
+    /// A normal window (layer 0) from the window list.
+    private struct ListedWindow {
+        let id: CGWindowID
+        let owner: pid_t
+        /// Global Cocoa frame. For other apps' windows only when actually visible and not leaving (otherwise nil:
+        /// they don't count); for our own windows (the overlays) always.
+        let rect: CGRect?
+    }
+
+    /// The normal windows on screen, front to back.
+    private func normalWindows(screens: [CGRect]) -> [ListedWindow]? {
         guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
                 as? [[String: Any]] else { return nil }
-        let screens = NSScreen.screens.map(\.frame)
         let primaryHeight = screens.first?.height ?? 0
-        for w in list {
-            guard (w[kCGWindowLayer as String] as? Int) == 0,
-                  let owner = w[kCGWindowOwnerPID as String] as? pid_t, owner != ownPID,
-                  !leavingWindows.contains(w[kCGWindowNumber as String] as? CGWindowID ?? 0),
-                  Self.visibleRect(w, screens: screens, primaryHeight: primaryHeight) != nil else { continue }
-            return owner
+        return list.compactMap { w in
+            guard (w[kCGWindowLayer as String] as? Int) == 0, let owner = w[kCGWindowOwnerPID as String] as? pid_t
+            else { return nil }
+            let id = w[kCGWindowNumber as String] as? CGWindowID ?? 0
+            let rect: CGRect?
+            if owner == ownPID {
+                rect = (w[kCGWindowBounds as String] as? NSDictionary)
+                    .flatMap { CGRect(dictionaryRepresentation: $0 as CFDictionary) }
+                    .map { CGRect(x: $0.minX, y: primaryHeight - $0.maxY, width: $0.width, height: $0.height) }
+            } else {
+                rect = leavingWindows.contains(id) ? nil : Self.visibleRect(w, screens: screens, primaryHeight: primaryHeight)
+            }
+            return ListedWindow(id: id, owner: owner, rect: rect)
         }
-        return nil
     }
+
+    /// The display holding most of a rect.
+    private static func screen(holding rect: CGRect, in screens: [CGRect]) -> CGRect? {
+        screens.max { area($0.intersection(rect)) < area($1.intersection(rect)) }
+    }
+
+    private static func area(_ r: CGRect) -> CGFloat { r.isNull ? 0 : r.width * r.height }
 
     /// A window's frame in global Cocoa coordinates if it's actually visible: not transparent, not tiny, on a
     /// screen. Filters out invisible helper windows (Electron, Telegram, Zoom…).
@@ -481,22 +542,47 @@ final class FocusTracker {
         return screens.contains(where: { $0.intersects(rect) }) ? rect : nil
     }
 
-    private func buildTarget(pid: pid_t) -> FocusTarget? {
-        guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
-                as? [[String: Any]] else { return nil }
+    /// The target for the app's top window and, with several displays, the targets of the other displays.
+    private func buildTargets(pid: pid_t) -> FocusTarget? {
         let screens = NSScreen.screens.map(\.frame)
-        let primaryHeight = screens.first?.height ?? 0
+        guard let windows = normalWindows(screens: screens),
+              let top = windows.first(where: { $0.owner == pid && $0.owner != ownPID && $0.rect != nil }) else { return nil }
+        // With one display, everything is on it.
+        let active = screens.count > 1 ? Self.screen(holding: top.rect!, in: screens) : nil
+        guard var target = buildTarget(pid: pid, windows: windows, screens: screens, within: active) else { return nil }
+        if let active, dimOtherScreens {
+            // Each other display keeps its own top window bright: the top window mostly on it, whoever owns it.
+            for s in screens where s != active {
+                guard let w = windows.first(where: { w in
+                          w.owner != ownPID && w.rect.map { Self.screen(holding: $0, in: screens) == s } == true
+                      }),
+                      let t = buildTarget(pid: w.owner, windows: windows, screens: screens, within: s, top: w.id)
+                else { continue }
+                target.others.append(t)
+            }
+        }
+        if peekWindowID != nil, !target.all.contains(where: { $0.peekID != nil }) {
+            peekWindowID = nil  // gone, or not dimmed any more
+        }
+        return target
+    }
+
+    /// What stays bright around the app's top window. With several displays it's built for one display (`within`)
+    /// from the windows on it, and its overlay is the one on that display; `top` picks the top window there (by
+    /// default the app's first window on it).
+    private func buildTarget(pid: pid_t, windows all: [ListedWindow], screens allScreens: [CGRect],
+                             within: CGRect?, top forcedTop: CGWindowID? = nil) -> FocusTarget? {
+        let windows = within.map { s in all.filter { w in w.rect.map { Self.area($0.intersection(s)) > 0 } ?? false } } ?? all
+        let screens = within.map { [$0] } ?? allScreens
 
         // Windows above our overlay (everything before it in the front-to-back list).
         var above: CGMutablePath? = CGMutablePath()
-        for w in list {
-            guard (w[kCGWindowLayer as String] as? Int) == 0, let owner = w[kCGWindowOwnerPID as String] as? pid_t else { continue }
-            if owner == ownPID { break }
-            guard !leavingWindows.contains(w[kCGWindowNumber as String] as? CGWindowID ?? 0),
-                  let rect = Self.visibleRect(w, screens: screens, primaryHeight: primaryHeight) else { continue }
+        for w in windows {
+            if w.owner == ownPID { break }
+            guard let rect = w.rect else { continue }
             above?.addPath(CGPath(roundedRect: rect, cornerWidth: holeCornerRadius, cornerHeight: holeCornerRadius, transform: nil))
         }
-        if !list.contains(where: { ($0[kCGWindowOwnerPID as String] as? pid_t) == ownPID && ($0[kCGWindowLayer as String] as? Int) == 0 }) {
+        if !windows.contains(where: { $0.owner == ownPID }) {
             above = nil  // the overlay isn't on screen
         }
 
@@ -519,11 +605,13 @@ final class FocusTracker {
         var peekCovered = false            // the overlay is still above it
         var peekOrderOK = false            // the overlay already sits right below it
         var peekOrderChecked = false
-        var peekPending: Bool { peekWindowID != nil && peekRect == nil }
+        // Only the target whose top window it was highlighted over looks for it.
+        var peekPending: Bool { peekWindowID != nil && peekRect == nil && topID != nil && topID == peekForTopID }
+        // Windows above the top window (on another display: windows mostly elsewhere that reach onto this one).
+        var aboveTop: [CGRect] = []
 
-        for w in list {
-            guard (w[kCGWindowLayer as String] as? Int) == 0,
-                  let owner = w[kCGWindowOwnerPID as String] as? pid_t else { continue }
+        for w in windows {
+            let owner = w.owner
 
             if owner == ownPID {
                 // The first normal window right below the top window must be our overlay.
@@ -534,14 +622,12 @@ final class FocusTracker {
                 continue
             }
 
-            guard !leavingWindows.contains(w[kCGWindowNumber as String] as? CGWindowID ?? 0),
-                  let rect = Self.visibleRect(w, screens: screens, primaryHeight: primaryHeight) else { continue }
+            guard let rect = w.rect else { continue }
             if peekRect != nil { peekOrderChecked = true }  // another window between it and the overlay
 
             // Only a dimmed window can be highlighted: below the app's top window, and not one of the app's
             // windows that All App Windows keeps bright anyway.
-            if peekPending, (w[kCGWindowNumber as String] as? CGWindowID) == peekWindowID,
-               topID != nil, topID == peekForTopID, !(mode == .app && owner == pid) {
+            if peekPending, w.id == peekWindowID, !(mode == .app && owner == pid) {
                 peekRect = rect
                 peekOccluders = allAbove.filter { $0.intersects(rect) }
                 revealed = allAbove + [rect]
@@ -551,9 +637,10 @@ final class FocusTracker {
 
             guard topID != nil else {
                 // Everything above the app's top window is above the overlay anyway.
-                if owner == pid, let id = w[kCGWindowNumber as String] as? CGWindowID {
-                    topID = id
+                if owner == pid, forcedTop == nil || w.id == forcedTop {
+                    topID = w.id
                     topRect = rect
+                    aboveTop = allAbove.dropLast()
                 }
                 continue
             }
@@ -579,15 +666,12 @@ final class FocusTracker {
         for s in screens where topRect.insetBy(dx: -1, dy: -1).contains(s) && !fullscreen.contains(s) {
             fullscreen.append(s)
         }
-        // Fallback when the Space type is unavailable.
-        if fullscreen.isEmpty, !Spaces.available, isFrontWindowFullScreen(pid: pid) {
+        // Fallback when the Space type is unavailable (the active app's window only: it asks AX).
+        if fullscreen.isEmpty, !Spaces.available, forcedTop == nil, isFrontWindowFullScreen(pid: pid) {
             let center = CGPoint(x: topRect.midX, y: topRect.midY)
             fullscreen = screens.filter { $0.contains(center) }
         }
-        let activeScreen = screens.max { a, b in
-            let ia = a.intersection(topRect), ib = b.intersection(topRect)
-            return (ia.isNull ? 0 : ia.width * ia.height) < (ib.isNull ? 0 : ib.width * ib.height)
-        }
+        let activeScreen = Self.screen(holding: topRect, in: screens)
         let radius = holeCornerRadius
         let topPath = CGPath(roundedRect: topRect, cornerWidth: radius, cornerHeight: radius, transform: nil)
         func visiblePart(_ rect: CGRect, minus occluders: [CGRect]) -> CGPath {
@@ -622,6 +706,15 @@ final class FocusTracker {
         }
         let active: CGPath = holes.map { topPath.union($0) } ?? topPath
         var bright = active
+        if forcedTop != nil, !aboveTop.isEmpty {
+            // On another display, windows reaching onto it from the active one (above its top window) are above
+            // the overlay too.
+            signature.append(contentsOf: aboveTop)
+            signature.append(.null)
+            for rect in aboveTop {
+                bright = bright.union(CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil))
+            }
+        }
         var peekRegion: CGPath?
         var peekID: CGWindowID?
         if let peekRect, let id = peekWindowID {
@@ -633,12 +726,10 @@ final class FocusTracker {
             for rect in revealed {
                 bright = bright.union(CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil))
             }
-        } else if peekWindowID != nil {
-            peekWindowID = nil  // gone, or not dimmed any more
         }
         return FocusTarget(topID: topID, orderBelowID: peekID ?? topID, holes: holes, fullscreenScreens: fullscreen,
                            activeScreen: activeScreen,
-                           orderOK: (peekID != nil ? peekOrderOK : orderOK) || !fullscreen.isEmpty,
+                           orderOK: (peekID != nil ? peekOrderOK : orderOK) || fullscreen.contains(where: screens.contains),
                            coveredByOverlay: peekID != nil ? peekCovered : overlayAbove, brightRegion: bright, activeRegion: active,
                            aboveOverlay: above, peekID: peekID, peekRegion: peekRegion, signature: signature)
     }

@@ -9,7 +9,8 @@ import AppKit
 /// (toolbars, panels, helper windows), and moving across them mustn't start the count over.
 ///
 /// Only normal windows that are currently dimmed take part: not the desktop, its icons, the menu bar, the Dock,
-/// panels or notifications on other window levels, and not windows that are bright anyway.
+/// panels or notifications on other window levels, and not windows that are bright anyway. With several displays
+/// each one counts on its own: the highlight is of a window below that display's top window.
 ///
 /// Cost: each pointer move is checked against the bright area and a cached list of window frames. The window
 /// list is read only when the pointer enters a dimmed area, at most every `snapshotInterval` while it moves there,
@@ -60,15 +61,16 @@ final class PeekWatcher {
 
     /// p is in global Quartz coordinates (PointerMonitor).
     func pointerMoved(_ quartz: CGPoint, at now: TimeInterval) {
-        guard let target = tracker.lastTarget else { cancelDwell(); return }
+        guard let main = tracker.lastTarget else { cancelDwell(); return }
         let p = Self.cocoa(quartz)
+        let target = main.target(at: p)  // nil: a display without the effect
 
         // The effect is below a window: it stays while the pointer is on that window's visible part. Moving onto
         // another window that isn't the active one moves the effect below that window at once; moving onto the
         // active window, the desktop, the menu bar or the Dock brings the effect back.
         // A change waits `switchDelay`, so passing over gaps and background windows on the way doesn't count.
         if let peek = tracker.peekWindowID {
-            if target.peekID != peek {
+            guard let holder = main.all.first(where: { $0.peekID == peek }) else {
                 // Requested but not applied yet. If it still isn't after a moment, it never will be (the tracker
                 // skipped the refresh): drop it rather than wait forever.
                 guard now - peekRequestedAt > applyTimeout else { return }
@@ -77,7 +79,7 @@ final class PeekWatcher {
                 return
             }
             cancelDwell()
-            if let region = target.peekRegion, region.contains(p) { cancelSwitch(); return }
+            if let region = holder.peekRegion, region.contains(p) { cancelSwitch(); return }
             if now - snapshotTime > engagedSnapshotInterval { takeSnapshot(at: now) }
             let next = nextPeek(at: p, target: target, current: peek)
             if switchWork != nil, switchTarget == next { return }  // already waiting for this change
@@ -88,15 +90,15 @@ final class PeekWatcher {
             DispatchQueue.main.asyncAfter(deadline: .now() + switchDelay, execute: work)
             return
         }
-        // On a bright window (the active one, the app's other windows it keeps bright) or a screen without the
+        // On a bright window (the active one, the app's other windows it keeps bright) or a display without the
         // effect: nothing to do.
-        if isOnActive(p, target: target, now: now) || onUndimmedScreen(p, target: target) {
+        guard let target, !isOnActive(p, target: target, now: now) else {
             cancelDwell()
             return
         }
         // In the dimmed area: which window is under the pointer?
         if now - snapshotTime > snapshotInterval { takeSnapshot(at: now) }
-        guard let window = windowUnder(p), window.id != target.topID else {
+        guard let window = dimmedWindow(at: p, target: target) else {
             if dwell != nil { log.debug("count cancelled: no dimmed window under the pointer") }
             cancelDwell()
             return
@@ -118,16 +120,24 @@ final class PeekWatcher {
         guard target.activeRegion.contains(p) else { return false }
         if now - snapshotTime > snapshotInterval { takeSnapshot(at: now) }
         guard let window = windowUnder(p) else { return staleTarget() }
-        if window.id == target.topID { return true }
+        if window.id == target.topID || isAboveTop(window, target: target) { return true }
         let activePID = snapshot.first(where: { $0.id == target.topID })?.pid
         if window.pid == activePID, target.holes?.contains(p) == true { return true }
         return staleTarget()
     }
 
-    /// Dim Active Screen Only is on and the point is on another screen, which has no effect.
-    private func onUndimmedScreen(_ p: CGPoint, target: FocusTarget) -> Bool {
-        guard Settings.shared.dimActiveScreenOnly, let active = target.activeScreen else { return false }
-        return !active.contains(p)
+    /// The window lies above the top window, so above the overlay and bright (on another display: a window
+    /// reaching onto it from the display with the active window).
+    private func isAboveTop(_ window: WindowInfo, target: FocusTarget) -> Bool {
+        guard let i = snapshot.firstIndex(where: { $0.id == window.id }),
+              let top = snapshot.firstIndex(where: { $0.id == target.topID }) else { return false }
+        return i < top
+    }
+
+    /// The window under the point if it's one that's dimmed: a normal window below the top window.
+    private func dimmedWindow(at p: CGPoint, target: FocusTarget) -> WindowInfo? {
+        guard let window = windowUnder(p), window.id != target.topID, !isAboveTop(window, target: target) else { return nil }
+        return window
     }
 
     /// The tracker's idea of where the active window is doesn't match the screen.
@@ -143,32 +153,34 @@ final class PeekWatcher {
 
     /// Where the effect goes when the pointer leaves the window it's below: below the window now under the pointer,
     /// or nil (back to normal) over the active window, the desktop, the menu bar or the Dock.
-    private func nextPeek(at p: CGPoint, target: FocusTarget, current: CGWindowID) -> CGWindowID? {
+    private func nextPeek(at p: CGPoint, target: FocusTarget?, current: CGWindowID) -> CGWindowID? {
         let now = ProcessInfo.processInfo.systemUptime
-        guard !isOnActive(p, target: target, now: now), !onUndimmedScreen(p, target: target), let window = windowUnder(p),
-              window.id != current, window.id != target.topID else { return nil }
+        guard let target, !isOnActive(p, target: target, now: now), let window = dimmedWindow(at: p, target: target),
+              window.id != current else { return nil }
         return window.id
     }
 
     private func switchEnded(to next: CGWindowID?, from peek: CGWindowID) {
         switchWork = nil
         switchTarget = nil
-        guard tracker.peekWindowID == peek, let target = tracker.lastTarget else { return }
+        guard tracker.peekWindowID == peek, let main = tracker.lastTarget else { return }
         let p = NSEvent.mouseLocation
-        if let region = target.peekRegion, region.contains(p) { return }  // came back
+        if main.all.contains(where: { $0.peekID == peek && $0.peekRegion?.contains(p) == true }) { return }  // came back
         takeSnapshot(at: ProcessInfo.processInfo.systemUptime)
+        let target = main.target(at: p)
         guard nextPeek(at: p, target: target, current: peek) == next else { return }  // moved on: the next move decides
         if let next {
             log.debug("pointer moved to window \(next): the effect moves below it")
         } else {
             log.debug("highlight ended: the pointer left window \(peek)")
         }
-        if let next { request(next) } else { tracker.peekWindowID = nil }
+        if let next, let target { request(next, over: target) } else { tracker.peekWindowID = nil }
     }
 
-    private func request(_ id: CGWindowID) {
+    /// `target` is the one of the window's display.
+    private func request(_ id: CGWindowID, over target: FocusTarget) {
         peekRequestedAt = ProcessInfo.processInfo.systemUptime
-        tracker.peekWindowID = id
+        tracker.highlight(id, over: target.topID)
     }
 
     private func cancelSwitch() {
@@ -186,21 +198,20 @@ final class PeekWatcher {
     private func dwellEnded(for pid: pid_t) {
         dwell = nil
         candidatePID = nil
-        guard let target = tracker.lastTarget else { return }
         // Still on a dimmed window of that app?
         let p = NSEvent.mouseLocation
-        guard !isOnActive(p, target: target, now: ProcessInfo.processInfo.systemUptime),
-              !onUndimmedScreen(p, target: target) else {
+        guard let target = tracker.lastTarget?.target(at: p),
+              !isOnActive(p, target: target, now: ProcessInfo.processInfo.systemUptime) else {
             log.debug("highlight skipped: the pointer is on a bright area now")
             return
         }
         takeSnapshot(at: ProcessInfo.processInfo.systemUptime)
-        guard let window = windowUnder(p), window.pid == pid, window.id != target.topID else {
+        guard let window = dimmedWindow(at: p, target: target), window.pid == pid else {
             log.debug("highlight skipped: the pointer moved to another app's window")
             return
         }
         log.debug("highlight window \(window.id)")
-        request(window.id)
+        request(window.id, over: target)
     }
 
     private func cancelDwell() {

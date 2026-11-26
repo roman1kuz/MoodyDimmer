@@ -7,6 +7,9 @@
 - Each screen gets one transparent overlay window that lets clicks through. It's placed directly below the window
   that stays bright (`NSWindow.order(.below, relativeTo:)`), so everything above it is bright and everything below
   it gets the effect.
+- With several displays each one has its own bright window: the active window on its display, and on every other
+  display the top window mostly on it. Each overlay goes below its own display's window, and the window list is read
+  once for all of them.
 - In *All App Windows* mode the overlay has holes cut out for the app's other windows (a `CAShapeLayer` mask). Another
   app's window lying over one of those windows (between the app's windows) gets a hole too, for its whole visible
   part, so it doesn't sit like a dark patch on the bright windows.

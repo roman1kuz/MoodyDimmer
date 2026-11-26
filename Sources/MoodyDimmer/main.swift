@@ -20,11 +20,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.onMenuWillOpen = { [weak self] in self?.tracker.ensureAttached() }
 
         tracker.mode = settings.focusMode
+        tracker.dimOtherScreens = !settings.dimActiveScreenOnly
         tracker.onTarget = { [weak self] target in self?.overlays.update(target: target) }
         overlays.onStale = { [weak self] in self?.tracker.scheduleUpdate() }
 
         settings.onChange = { [weak self] change in self?.settingsChanged(change) }
-        drags.onOutsideChanged = { [weak self] outside in self?.overlays.setSuspended(outside, reason: .dragging) }
+        drags.onScreenChanged = { [weak self] screen in self?.overlays.setDragScreen(screen) }
         // Mission Control, App Exposé and Show Desktop: no effect there; reorder under the active window after.
         systemMode.onChange = { [weak self] active in
             guard let self else { return }
@@ -114,7 +115,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             overlays.rebuildScreens()
         case .activeScreenOnly:
             peek.reset()  // a window highlighted on another screen
-            overlays.reapply()
+            tracker.dimOtherScreens = !settings.dimActiveScreenOnly
         case .pointerHighlight:
             updatePointerMonitor()
         case .quickToggle:

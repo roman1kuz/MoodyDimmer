@@ -25,10 +25,12 @@ final class OverlayController {
     private var screens: [ScreenOverlay] = []
     private var target: FocusTarget?
     private var effects: EffectParams
-    /// Why the effect is temporarily removed. The target keeps updating meanwhile.
-    enum SuspendReason { case dragging, systemMode }
+    /// Why the effect is temporarily removed from every display. The target keeps updating meanwhile.
+    enum SuspendReason { case systemMode }
     private var suspendReasons: Set<SuspendReason> = []
     private var suspended: Bool { !suspendReasons.isEmpty }
+    /// The display under a dragged item outside its source app (Hide While Dragging): no effect there meanwhile.
+    private var dragScreen: CGRect?
     /// The target is out of date (its window is gone): ask the tracker for a fresh one.
     var onStale: (() -> Void)?
     private var staleRecheckPending = false
@@ -62,9 +64,6 @@ final class OverlayController {
         }
     }
 
-    /// A setting that decides which screens get the effect changed: show the current target again.
-    func reapply() { update(target: target) }
-
     /// Effect strength or kind changed.
     func applyEffects(animated: Bool) {
         let p = EffectParams.from(settings)
@@ -80,6 +79,12 @@ final class OverlayController {
         update(target: target)
     }
 
+    func setDragScreen(_ screen: CGRect?) {
+        guard screen != dragScreen else { return }
+        dragScreen = screen
+        update(target: target)
+    }
+
     func setEnabled(_ on: Bool) {
         if on, !suspended, let target { show(target, duration: settings.animationDuration) }
         else { hideAll(duration: settings.animationDuration) }
@@ -87,17 +92,18 @@ final class OverlayController {
 
     // MARK: - Ordering
 
-    private func show(_ t: FocusTarget, duration d: TimeInterval) {
+    /// Each display has its own target (its own top window), and its overlay sits right below that window.
+    private func show(_ target: FocusTarget, duration d: TimeInterval) {
         for s in screens {
             let w = s.window
-            // The active window covers the whole screen (full screen video or app): no effect needed.
-            if t.fullscreenScreens.contains(s.screenFrame) {
-                hide(s, duration: 0)
+            // No effect on this display: no window on it, Dim Active Display Only, or a drag over it.
+            guard let t = target.target(on: s.screenFrame), s.screenFrame != dragScreen else {
+                hide(s, duration: d)
                 continue
             }
-            // Dim Active Screen Only: the other screens stay as they are.
-            if settings.dimActiveScreenOnly, let active = t.activeScreen, s.screenFrame != active {
-                hide(s, duration: d)
+            // The top window covers the whole screen (full screen video or app): no effect needed.
+            if t.fullscreenScreens.contains(s.screenFrame) {
+                hide(s, duration: 0)
                 continue
             }
             if !w.wantVisible || s.topID == nil {

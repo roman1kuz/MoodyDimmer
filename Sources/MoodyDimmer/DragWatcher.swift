@@ -1,13 +1,15 @@
 import AppKit
 
 /// Watches drag and drop (files, clips, text) between apps: when the dragged item leaves
-/// the source app's windows, the effect is removed so you can see where to drop it.
+/// the source app's windows, the effect is removed from the display under it so you can see where to drop it.
+/// The other displays keep it; moving the item to another display moves the gap there.
 ///
 /// No timers: global mouse monitors. A real drag and drop differs from moving a window or
 /// selecting because the source writes to the system drag pasteboard, which bumps its changeCount.
 final class DragWatcher {
-    /// true means the dragged item is outside the source windows and the effect should go.
-    var onOutsideChanged: ((Bool) -> Void)?
+    /// The display (its frame) under the dragged item while it's outside the source windows: the effect goes
+    /// from there. nil: no such drag.
+    var onScreenChanged: ((CGRect?) -> Void)?
 
     private var monitors: [Any] = []
     private let dragPasteboard = NSPasteboard(name: .drag)
@@ -16,7 +18,7 @@ final class DragWatcher {
     private var lastCheck: TimeInterval = 0
     /// The source app's windows (Cocoa coordinates), known once the drag has started.
     private var sourceRects: [CGRect]?
-    private var outside = false
+    private var screen: CGRect?
     private let ownPID = ProcessInfo.processInfo.processIdentifier
 
     var isRunning: Bool { !monitors.isEmpty }
@@ -42,7 +44,7 @@ final class DragWatcher {
         downPoint = NSEvent.mouseLocation
         lastCheck = 0
         sourceRects = nil
-        setOutside(false)
+        setScreen(nil)
     }
 
     private func mouseDragged(_ e: NSEvent) {
@@ -56,18 +58,20 @@ final class DragWatcher {
             sourceRects = Self.windowsOfApp(at: downPoint, excluding: ownPID)
         }
         guard let rects = sourceRects else { return }
-        setOutside(!rects.contains { $0.contains(p) })
+        guard !rects.contains(where: { $0.contains(p) }) else { setScreen(nil); return }
+        // Off every display for a moment (a corner between displays): keep the one it was on.
+        setScreen(NSScreen.screens.first { NSMouseInRect(p, $0.frame, false) }?.frame ?? screen)
     }
 
     private func mouseUp() {
         sourceRects = nil
-        setOutside(false)
+        setScreen(nil)
     }
 
-    private func setOutside(_ value: Bool) {
-        guard value != outside else { return }
-        outside = value
-        onOutsideChanged?(value)
+    private func setScreen(_ value: CGRect?) {
+        guard value != screen else { return }
+        screen = value
+        onScreenChanged?(value)
     }
 
     /// All visible normal windows of the app that owns the window under the point (where the drag began).

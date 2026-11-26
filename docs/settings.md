@@ -52,14 +52,16 @@ desktop (Finder active without windows) and on an empty screen there's no effect
 ## Behavior
 
 - **Hide While Dragging**: when something you drag (a file, a clip, text) leaves the windows of the app you drag it
-  from, the effect fades out so you can see where to drop it. It comes back when you release the mouse button.
+  from, the effect fades out so you can see where to drop it. It comes back when you release the mouse button. With
+  several displays only the one under the pointer loses the effect, and it follows the pointer to another display.
 - **Dim Menu Bar**: the effect covers the menu bar too. The menu bar is translucent in macOS 26 and later, so with
   strong dimming it gets dark while its icons may stay dark. Turn this off to stop the effect at the bottom edge of
   the menu bar. With an auto-hiding menu bar the effect always covers the whole screen.
 - **Dim Active Display Only**: with several displays, only the one with the active window gets the effect (the one
   holding most of the window); the others stay as they are, for reference material or a chat on a second display. The
-  effect moves with the active window from display to display. Off by default: every display is dimmed except the
-  active window.
+  effect moves with the active window from display to display. Off by default: then each display works on its own,
+  and its top window stays bright (the window mostly on that display that's in front of the others there), with the
+  same Keep Bright rule; a display without windows gets no effect.
 - **Highlight Window Under Pointer**: when the pointer rests on a dimmed window for 1.5 seconds, the effect moves
   below that window, so it and every window above it become visible; it doesn't become active. From then on, moving
   the pointer onto another window that isn't the active one moves the effect below that window, and moving it onto the

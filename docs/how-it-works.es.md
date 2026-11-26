@@ -7,6 +7,9 @@
 - Cada pantalla tiene una ventana superpuesta transparente que deja pasar los clics. Se coloca justo debajo de la
   ventana que sigue iluminada (`NSWindow.order(.below, relativeTo:)`): todo lo que está por encima queda iluminado y
   todo lo que está por debajo recibe el efecto.
+- Con varias pantallas cada una tiene su propia ventana iluminada: la ventana activa en su pantalla y, en las demás,
+  la ventana superior que está mayormente en ella. Cada superposición se coloca bajo la ventana de su pantalla, y la
+  lista de ventanas se lee una sola vez para todas.
 - En el modo *Todas las ventanas de la app*, la superposición tiene huecos recortados para las demás ventanas de la
   app (una máscara `CAShapeLayer`). Una ventana de otra app que quede sobre una de ellas (entre las ventanas de la
   app) también recibe un hueco, en toda su parte visible, para que no parezca un parche oscuro sobre las ventanas

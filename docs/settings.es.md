@@ -53,15 +53,18 @@ pierdan en el fondo oscurecido. En el escritorio (Finder activo sin ventanas) y 
 ## Comportamiento
 
 - **Quitar el efecto al arrastrar**: cuando lo que arrastras (un archivo, un clip, un texto) sale de las ventanas de
-  la app de origen, el efecto se desvanece para que veas dónde soltarlo. Vuelve al soltar el botón del ratón.
+  la app de origen, el efecto se desvanece para que veas dónde soltarlo. Vuelve al soltar el botón del ratón. Con
+  varias pantallas solo se quita en la que está el puntero, y pasa con él a otra pantalla.
 - **Oscurecer la barra de menús**: el efecto cubre también la barra de menús. En macOS 26 y posteriores la barra de
   menús es translúcida, así que con un oscurecimiento fuerte se vuelve oscura mientras sus iconos pueden seguir
   oscuros. Desactívalo para que el efecto termine en el borde inferior de la barra de menús. Con la barra de menús
   oculta automáticamente, el efecto siempre cubre toda la pantalla.
 - **Oscurecer solo la pantalla activa**: con varias pantallas, solo la de la ventana activa recibe el efecto (la que
   contiene la mayor parte de la ventana); las demás se quedan como están, por ejemplo con documentación o un chat en
-  un segundo monitor. El efecto pasa de una pantalla a otra con la ventana activa. Desactivado por defecto: se
-  oscurecen todas las pantallas salvo la ventana activa.
+  un segundo monitor. El efecto pasa de una pantalla a otra con la ventana activa. Desactivado por defecto: entonces
+  cada pantalla funciona por separado y en ella sigue iluminada su ventana superior (la que está mayormente en esa
+  pantalla y por encima de las demás), con la misma regla de Mantener iluminado; una pantalla sin ventanas no recibe
+  efecto.
 - **Iluminar la ventana bajo el puntero**: cuando el puntero se detiene 1,5 segundos sobre una ventana oscurecida, el
   efecto pasa por debajo de esa ventana, así que se ven ella y todas las ventanas que tiene encima; no pasa a estar
   activa. A partir de ahí, mover el puntero a otra ventana que no sea la activa lleva el efecto debajo de esa ventana,
