@@ -88,8 +88,9 @@ final class PeekWatcher {
             DispatchQueue.main.asyncAfter(deadline: .now() + switchDelay, execute: work)
             return
         }
-        // On a bright window (the active one, the app's other windows it keeps bright): nothing to do.
-        if isOnActive(p, target: target, now: now) {
+        // On a bright window (the active one, the app's other windows it keeps bright) or a screen without the
+        // effect: nothing to do.
+        if isOnActive(p, target: target, now: now) || onUndimmedScreen(p, target: target) {
             cancelDwell()
             return
         }
@@ -123,6 +124,12 @@ final class PeekWatcher {
         return staleTarget()
     }
 
+    /// Dim Active Screen Only is on and the point is on another screen, which has no effect.
+    private func onUndimmedScreen(_ p: CGPoint, target: FocusTarget) -> Bool {
+        guard Settings.shared.dimActiveScreenOnly, let active = target.activeScreen else { return false }
+        return !active.contains(p)
+    }
+
     /// The tracker's idea of where the active window is doesn't match the screen.
     private func staleTarget() -> Bool {
         if !staleRefreshRequested {
@@ -138,7 +145,7 @@ final class PeekWatcher {
     /// or nil (back to normal) over the active window, the desktop, the menu bar or the Dock.
     private func nextPeek(at p: CGPoint, target: FocusTarget, current: CGWindowID) -> CGWindowID? {
         let now = ProcessInfo.processInfo.systemUptime
-        guard !isOnActive(p, target: target, now: now), let window = windowUnder(p),
+        guard !isOnActive(p, target: target, now: now), !onUndimmedScreen(p, target: target), let window = windowUnder(p),
               window.id != current, window.id != target.topID else { return nil }
         return window.id
     }
@@ -182,7 +189,8 @@ final class PeekWatcher {
         guard let target = tracker.lastTarget else { return }
         // Still on a dimmed window of that app?
         let p = NSEvent.mouseLocation
-        guard !isOnActive(p, target: target, now: ProcessInfo.processInfo.systemUptime) else {
+        guard !isOnActive(p, target: target, now: ProcessInfo.processInfo.systemUptime),
+              !onUndimmedScreen(p, target: target) else {
             log.debug("highlight skipped: the pointer is on a bright area now")
             return
         }

@@ -16,6 +16,8 @@ struct FocusTarget: Equatable {
     /// Screens fully covered by the active window (full screen video, app in full screen).
     /// No effect there: nothing to dim, and in a full screen Space the overlay would end up above the window.
     let fullscreenScreens: [CGRect]
+    /// The screen holding most of the top window (Dim Active Screen Only), global Cocoa coordinates.
+    let activeScreen: CGRect?
     /// The overlay already sits right below orderBelowID. If not, reorder even if everything else matches.
     let orderOK: Bool
     /// orderBelowID is under our overlay (the active window went away and the one left below it takes over, or the
@@ -40,6 +42,7 @@ struct FocusTarget: Equatable {
 
     static func == (a: FocusTarget, b: FocusTarget) -> Bool {
         a.topID == b.topID && a.peekID == b.peekID && a.signature == b.signature && a.fullscreenScreens == b.fullscreenScreens
+            && a.activeScreen == b.activeScreen
     }
 }
 
@@ -581,6 +584,10 @@ final class FocusTracker {
             let center = CGPoint(x: topRect.midX, y: topRect.midY)
             fullscreen = screens.filter { $0.contains(center) }
         }
+        let activeScreen = screens.max { a, b in
+            let ia = a.intersection(topRect), ib = b.intersection(topRect)
+            return (ia.isNull ? 0 : ia.width * ia.height) < (ib.isNull ? 0 : ib.width * ib.height)
+        }
         let radius = holeCornerRadius
         let topPath = CGPath(roundedRect: topRect, cornerWidth: radius, cornerHeight: radius, transform: nil)
         func visiblePart(_ rect: CGRect, minus occluders: [CGRect]) -> CGPath {
@@ -630,6 +637,7 @@ final class FocusTracker {
             peekWindowID = nil  // gone, or not dimmed any more
         }
         return FocusTarget(topID: topID, orderBelowID: peekID ?? topID, holes: holes, fullscreenScreens: fullscreen,
+                           activeScreen: activeScreen,
                            orderOK: (peekID != nil ? peekOrderOK : orderOK) || !fullscreen.isEmpty,
                            coveredByOverlay: peekID != nil ? peekCovered : overlayAbove, brightRegion: bright, activeRegion: active,
                            aboveOverlay: above, peekID: peekID, peekRegion: peekRegion, signature: signature)

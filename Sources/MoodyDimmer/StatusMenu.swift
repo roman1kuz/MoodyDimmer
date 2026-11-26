@@ -508,6 +508,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     private var shortcutItem: NSMenuItem!
     private var shakeRow: CheckRow!
     private var hapticsRow: CheckRow!
+    private var activeScreenRow: CheckRow!
     private var permissionItem: NSMenuItem!
     private var iconStyleItems: [NSMenuItem] = []
     private var iconThemeItems: [NSMenuItem] = []
@@ -566,6 +567,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         modeAppRow = check("All App Windows") { $0.settings.focusMode = .app }
         hideDragRow = check("Hide While Dragging") { $0.settings.hideWhileDragging.toggle() }
         menuBarRow = check("Dim Menu Bar") { $0.settings.dimMenuBar.toggle() }
+        activeScreenRow = check("Dim Active Display Only") { $0.settings.dimActiveScreenOnly.toggle() }
         peekRow = check("Highlight Window Under Pointer") { $0.settings.highlightUnderPointer.toggle() }
         shakeRow = check("Shake Pointer to Toggle") { $0.settings.shakeToToggle.toggle() }
         hapticsRow = check("Trackpad Haptics") { $0.settings.haptics.toggle() }
@@ -631,6 +633,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             header(L("Behavior")),
             rowItem(hideDragRow),
             rowItem(menuBarRow),
+            rowItem(activeScreenRow),
             rowItem(peekRow),
             rowItem(hapticsRow),
             .separator(),
@@ -684,6 +687,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         modeAppRow.isOn = settings.focusMode == .app
         hideDragRow.isOn = settings.hideWhileDragging
         menuBarRow.isOn = settings.dimMenuBar
+        activeScreenRow.isOn = settings.dimActiveScreenOnly
         peekRow.isOn = settings.highlightUnderPointer
         loginRow.isOn = SMAppService.mainApp.status == .enabled
         shortcutItem.title = "\(L("Keyboard Shortcut")): \(settings.shortcut?.display ?? L("None"))…"

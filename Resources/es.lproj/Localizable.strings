@@ -6,6 +6,7 @@
 "Active Window Only" = "Solo la ventana activa";
 "All App Windows" = "Todas las ventanas de la app";
 "Dim Menu Bar" = "Oscurecer la barra de menús";
+"Dim Active Display Only" = "Oscurecer solo la pantalla activa";
 "Hide While Dragging" = "Quitar el efecto al arrastrar";
 "Highlight Window Under Pointer" = "Iluminar la ventana bajo el puntero";
 "Trackpad Haptics" = "Respuesta háptica del trackpad";

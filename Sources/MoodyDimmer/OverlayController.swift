@@ -62,6 +62,9 @@ final class OverlayController {
         }
     }
 
+    /// A setting that decides which screens get the effect changed: show the current target again.
+    func reapply() { update(target: target) }
+
     /// Effect strength or kind changed.
     func applyEffects(animated: Bool) {
         let p = EffectParams.from(settings)
@@ -90,6 +93,11 @@ final class OverlayController {
             // The active window covers the whole screen (full screen video or app): no effect needed.
             if t.fullscreenScreens.contains(s.screenFrame) {
                 hide(s, duration: 0)
+                continue
+            }
+            // Dim Active Screen Only: the other screens stay as they are.
+            if settings.dimActiveScreenOnly, let active = t.activeScreen, s.screenFrame != active {
+                hide(s, duration: d)
                 continue
             }
             if !w.wantVisible || s.topID == nil {

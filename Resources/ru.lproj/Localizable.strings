@@ -6,6 +6,7 @@
 "Active Window Only" = "Только активное окно";
 "All App Windows" = "Все окна приложения";
 "Dim Menu Bar" = "Затемнять строку меню";
+"Dim Active Display Only" = "Затемнять только активный дисплей";
 "Hide While Dragging" = "Убирать эффект при перетаскивании";
 "Highlight Window Under Pointer" = "Подсвечивать окно под курсором";
 "Trackpad Haptics" = "Тактильный отклик трекпада";

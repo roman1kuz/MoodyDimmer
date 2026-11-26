@@ -14,6 +14,7 @@ así que puedes cambiar varias seguidas.
 | Mantener iluminado | Todas las ventanas de la app |
 | Quitar el efecto al arrastrar | activado |
 | Oscurecer la barra de menús | activado |
+| Oscurecer solo la pantalla activa | desactivado |
 | Iluminar la ventana bajo el puntero | desactivado |
 | Respuesta háptica del trackpad | activado |
 | Oscurecer / Desenfoque / Grano | 50 % / no / no |
@@ -57,6 +58,10 @@ pierdan en el fondo oscurecido. En el escritorio (Finder activo sin ventanas) y 
   menús es translúcida, así que con un oscurecimiento fuerte se vuelve oscura mientras sus iconos pueden seguir
   oscuros. Desactívalo para que el efecto termine en el borde inferior de la barra de menús. Con la barra de menús
   oculta automáticamente, el efecto siempre cubre toda la pantalla.
+- **Oscurecer solo la pantalla activa**: con varias pantallas, solo la de la ventana activa recibe el efecto (la que
+  contiene la mayor parte de la ventana); las demás se quedan como están, por ejemplo con documentación o un chat en
+  un segundo monitor. El efecto pasa de una pantalla a otra con la ventana activa. Desactivado por defecto: se
+  oscurecen todas las pantallas salvo la ventana activa.
 - **Iluminar la ventana bajo el puntero**: cuando el puntero se detiene 1,5 segundos sobre una ventana oscurecida, el
   efecto pasa por debajo de esa ventana, así que se ven ella y todas las ventanas que tiene encima; no pasa a estar
   activa. A partir de ahí, mover el puntero a otra ventana que no sea la activa lleva el efecto debajo de esa ventana,

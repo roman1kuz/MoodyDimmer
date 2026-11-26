@@ -112,6 +112,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             updateDragWatcher()
         case .menuBarCoverage:
             overlays.rebuildScreens()
+        case .activeScreenOnly:
+            peek.reset()  // a window highlighted on another screen
+            overlays.reapply()
         case .pointerHighlight:
             updatePointerMonitor()
         case .quickToggle:
