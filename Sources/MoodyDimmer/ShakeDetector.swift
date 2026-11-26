@@ -3,9 +3,10 @@ import AppKit
 /// Detects a shake of the pointer: quick back-and-forth strokes in place, in any direction (with a mouse a
 /// diagonal shake comes naturally), like Monocle's shake to toggle.
 ///
-/// Speed is what makes a shake, not its exact size or direction:
-/// - several strokes in a row (`strokesNeeded` within `window`), each fast: at most `maxStrokeTime` long and at
-///   least `minSpeed` on average;
+/// Quick strokes are what make a shake, not its exact size or direction:
+/// - several strokes in a row (`strokesNeeded` within `window`), each short (at most `maxStrokeTime`) and fast (at
+///   least `minSpeed` on average), and short on average (`maxMeanStrokeTime`). Recorded shakes and gentle stroking
+///   move the pointer about as fast, but stroking swings wider and slower: about 150 ms a stroke against 100 ms;
 /// - a stroke runs from a turning point to the point farthest from it; its swing (that distance) is between
 ///   `minSwing` and `maxSwing` (about a third of a laptop screen);
 /// - straight enough: the path is at most `maxPathRatio` times the swing, so a slight arc from the wrist counts
@@ -13,6 +14,8 @@ import AppKit
 /// - back and forth: each stroke points roughly opposite to the previous one (within `maxTurnAngle`);
 /// - in place: the turning points stay within about one swing, so a zigzag that travels doesn't count;
 /// - jitter below `reverseThreshold` doesn't count as a change of direction;
+/// - only with nothing held: a mouse button press drops the shake in progress (see `reset`), and none may be down
+///   when it fires;
 /// - one shake toggles once: after it fires, the pointer has to rest for `rearmRest` before the next one counts,
 ///   so a long shake with short breaks in it doesn't toggle on and off again.
 /// Pointer moves come from PointerMonitor (plain moves only, not drags). The work per move is a few arithmetic
@@ -20,18 +23,21 @@ import AppKit
 final class ShakeDetector {
     var onShake: (() -> Void)?
 
-    private let strokesNeeded = 6
+    /// Tuned on recorded trackpad moves: these values catch 32 of 34 shakes and none of 14 gentle strokings.
+    private let strokesNeeded = 5
     private let window: TimeInterval = 1.0
     private let maxStrokeTime: TimeInterval = 0.18
-    /// Average speed of a stroke, pt/s. Measured shakes run at about 800–2900 pt/s.
-    private let minSpeed: CGFloat = 300
+    /// The strokes of a shake take about 90–110 ms on average; gentle stroking, 140–200 ms.
+    private let maxMeanStrokeTime: TimeInterval = 0.13
+    /// Average speed of a stroke, pt/s.
+    private let minSpeed: CGFloat = 400
     private let minSwing: CGFloat = 20
     private let maxSwing: CGFloat = 500
     private let maxPathRatio: CGFloat = 1.4
     /// How far a stroke may point from the exact opposite of the previous one.
     private let maxTurnAngle: CGFloat = 45
     /// Swings may differ, but not wildly (largest / smallest).
-    private let maxSwingRatio: CGFloat = 4
+    private let maxSwingRatio: CGFloat = 6
     /// The turning points of the whole shake fit within this many of its largest swings.
     private let maxSpanRatio: CGFloat = 1.6
     private let reverseThreshold: CGFloat = 4
@@ -43,6 +49,7 @@ final class ShakeDetector {
     private struct Stroke {
         let vector: CGVector
         let swing: CGFloat
+        let duration: TimeInterval
         let end: TimeInterval
         let turn: CGPoint
     }
@@ -61,8 +68,12 @@ final class ShakeDetector {
     private var strokes: [Stroke] = []
     private var armed = true
 
-    /// Forgets the shake in progress (e.g. when shake to toggle is turned off).
-    func reset() { reset(at: .zero, time: 0) }
+    /// Forgets the shake in progress (shake to toggle was turned off, or a mouse button went down): the next move
+    /// starts afresh, as after a pause.
+    func reset() {
+        strokes.removeAll()
+        lastTime = 0
+    }
 
     private func reset(at p: CGPoint, time: TimeInterval) {
         strokes.removeAll()
@@ -120,7 +131,7 @@ final class ShakeDetector {
                 let cosine = (vector.dx * previous.vector.dx + vector.dy * previous.vector.dy) / (swing * previous.swing)
                 if cosine > -cos(maxTurnAngle * .pi / 180) { strokes.removeAll() }
             }
-            strokes.append(Stroke(vector: vector, swing: swing, end: extremeTime, turn: extreme))
+            strokes.append(Stroke(vector: vector, swing: swing, duration: duration, end: extremeTime, turn: extreme))
             strokes.removeAll { now - $0.end > window }
         } else {
             strokes.removeAll()
@@ -141,7 +152,9 @@ final class ShakeDetector {
         let largest = swings.max()!, smallest = swings.min()!
         var span: CGFloat = 0
         for i in turns.indices { for j in turns.indices where j > i { span = max(span, Self.distance(turns[i], turns[j])) } }
-        guard largest / smallest <= maxSwingRatio, span <= largest * maxSpanRatio else { return }
+        let meanTime = strokes.reduce(0) { $0 + $1.duration } / Double(strokes.count)
+        guard largest / smallest <= maxSwingRatio, span <= largest * maxSpanRatio, meanTime <= maxMeanStrokeTime,
+              NSEvent.pressedMouseButtons == 0 else { return }
         armed = false
         strokes.removeAll()
         onShake?()

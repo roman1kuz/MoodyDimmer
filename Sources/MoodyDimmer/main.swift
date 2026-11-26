@@ -45,7 +45,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if self.settings.shakeToToggle { self.shake.moved(p, at: time) }
             if self.peekActive { self.peek.pointerMoved(p, at: time) }
         }
-        pointer.onButton = { [weak self] in self?.peek.buttonPressed() }
+        // A click or a drag starts: no shake or highlight is pending.
+        pointer.onButton = { [weak self] in
+            self?.shake.reset()
+            self?.peek.buttonPressed()
+        }
         recorder.onRecord = { [weak self] shortcut in self?.settings.shortcut = shortcut }
         menu.onChangeShortcut = { [weak self] in self?.recorder.show() }
         updateQuickToggle()

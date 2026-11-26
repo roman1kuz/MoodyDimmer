@@ -92,11 +92,12 @@ Two ways to turn the effect on or off without opening the menu. Both work in any
   ⌃. Esc cancels, Delete removes the shortcut. Letter keys are shown as in the Latin layout, whatever layout is
   active.
 - **Shake Pointer to Toggle**: shake the pointer quickly back and forth in place, in any direction (left and right, up
-  and down or diagonally), about three fast back-and-forth moves. Speed matters, not width: anything from a short
-  wiggle to a swing of about a third of the screen works, and a slight arc is fine. One shake toggles once; to toggle
-  again, hold the pointer still for a moment first. Slow back-and-forth moves, circling the pointer, a zigzag that
-  travels across the screen, pointing with an overshoot and dragging don't trigger it. Turn it off if you don't use
-  it: then the app stops receiving pointer moves altogether (unless *Highlight Window Under Pointer* is on).
+  and down or diagonally), two or three fast back-and-forth moves. Quick strokes matter (about a tenth of a second
+  each), not width: anything from a short wiggle to a swing of about a third of the screen works, and a slight arc is
+  fine. One shake toggles once; to toggle again, hold the pointer still for a moment first. Slow back-and-forth moves,
+  circling the pointer, a zigzag that travels across the screen, pointing with an overshoot and dragging don't trigger
+  it. Turn it off if you don't use it: then the app stops receiving pointer moves altogether (unless *Highlight Window
+  Under Pointer* is on).
 
 ## Menu Bar Icon
 
