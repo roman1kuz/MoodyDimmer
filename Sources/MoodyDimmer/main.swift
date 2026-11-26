@@ -6,6 +6,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let drags = DragWatcher()
     private let hotKey = HotKey()
     private let shake = ShakeDetector()
+    private let pointer = PointerMonitor()
+    private lazy var peek = PeekWatcher(tracker: tracker)
     private let recorder = ShortcutRecorder()
     private let systemMode = SystemModeWatcher()
     private var overlays: OverlayController!
@@ -34,6 +36,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // is off, so they can turn it back on.
         hotKey.onPress = { [weak self] in self?.settings.enabled.toggle() }
         shake.onShake = { [weak self] in self?.settings.enabled.toggle() }
+        pointer.onMove = { [weak self] p, time in
+            guard let self else { return }
+            if self.settings.shakeToToggle { self.shake.moved(p, at: time) }
+            if self.peekActive { self.peek.pointerMoved(p, at: time) }
+        }
+        pointer.onButton = { [weak self] in self?.peek.buttonPressed() }
         recorder.onRecord = { [weak self] shortcut in self?.settings.shortcut = shortcut }
         menu.onChangeShortcut = { [weak self] in self?.recorder.show() }
         updateQuickToggle()
@@ -52,9 +60,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         updateSystemModeWatcher()
     }
 
+    /// Highlight Window Under Pointer only matters while the effect is on.
+    private var peekActive: Bool { settings.highlightUnderPointer && settings.enabled }
+
     private func updateQuickToggle() {
         hotKey.register(settings.shortcut)
-        if settings.shakeToToggle { shake.start() } else { shake.stop() }
+        if !settings.shakeToToggle { shake.reset() }
+        updatePointerMonitor()
+    }
+
+    /// Pointer moves are needed for shake to toggle (even while the effect is off, to turn it back on) and for
+    /// Highlight Window Under Pointer; with neither, the app gets no pointer moves at all.
+    private func updatePointerMonitor() {
+        if !peekActive { peek.reset() }
+        if settings.shakeToToggle || peekActive { pointer.start() } else { pointer.stop() }
     }
 
     private func updateSystemModeWatcher() {
@@ -78,12 +97,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             updateDragWatcher()
             updateSystemModeWatcher()
+            updatePointerMonitor()
         case .focusMode:
             tracker.mode = settings.focusMode
         case .dragBehavior:
             updateDragWatcher()
         case .menuBarCoverage:
             overlays.rebuildScreens()
+        case .pointerHighlight:
+            updatePointerMonitor()
         case .quickToggle:
             updateQuickToggle()
         case .strength:

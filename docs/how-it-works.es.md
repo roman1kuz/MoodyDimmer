@@ -8,12 +8,24 @@
   ventana que sigue iluminada (`NSWindow.order(.below, relativeTo:)`): todo lo que está por encima queda iluminado y
   todo lo que está por debajo recibe el efecto.
 - En el modo *Todas las ventanas de la app*, la superposición tiene huecos recortados para las demás ventanas de la
-  app (una máscara `CAShapeLayer`). A los huecos se les restan las zonas tapadas por ventanas de otras apps.
+  app (una máscara `CAShapeLayer`). Una ventana de otra app que quede sobre una de ellas (entre las ventanas de la
+  app) también recibe un hueco, en toda su parte visible, para que no parezca un parche oscuro sobre las ventanas
+  iluminadas.
 - Al cambiar el foco, la superposición no se sustituye ni se desvanece entera: solo se anima su máscara, en las zonas
   de las ventanas que se iluminan u oscurecen. El resto de la pantalla mantiene exactamente el mismo oscurecimiento y
   desenfoque todo el tiempo.
 - Antes de colocar la superposición bajo una ventana, la app comprueba que esa ventana sigue en pantalla. Colocarla
   bajo una ventana que ya no existe la dejaría debajo de todas las ventanas.
+- *Iluminar la ventana bajo el puntero* coloca la superposición debajo de la ventana bajo el puntero, así que ella y
+  todas las ventanas que tiene encima se iluminan; la ida y la vuelta usan la misma animación de la máscara que un
+  cambio de foco. Los 1,5 segundos cuentan mientras el puntero sigue sobre ventanas de la misma app, porque muchas
+  apps dibujan una ventana como varias. Con el efecto ya bajado, pasar a otra ventana se aplica tras 0,3 s, para que
+  cruzar huecos y ventanas de fondo por el camino no cuente. Al buscar la ventana bajo el puntero se ignoran las
+  ventanas flotantes de otras apps en otros niveles (como el panel casi transparente de una utilidad para la muesca);
+  solo la interfaz de macOS, como el Dock y la barra de menús, lo impide. El puntero se compara con la zona iluminada
+  y con una lista en caché de los marcos de las ventanas; la lista de ventanas solo se lee cuando el puntero entra en
+  una zona oscurecida, unas pocas veces por segundo como mucho mientras se mueve por ella, y cuando termina una
+  espera.
 
 ## Seguimiento del foco
 

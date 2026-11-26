@@ -14,6 +14,7 @@ enum SettingsChange {
     case focusMode
     case dragBehavior
     case menuBarCoverage
+    case pointerHighlight
     case quickToggle
     case strength     // sliders: applied instantly
     case animation
@@ -34,6 +35,7 @@ final class Settings {
         static let focusMode = "focusMode"
         static let hideWhileDragging = "hideWhileDragging"
         static let dimMenuBar = "dimMenuBar"
+        static let highlightUnderPointer = "highlightUnderPointer"
         static let shortcutKeyCode = "shortcutKeyCode"          // -1 = no shortcut
         static let shortcutModifiers = "shortcutModifiers"
         static let shortcutDisplay = "shortcutDisplay"
@@ -55,6 +57,7 @@ final class Settings {
             Key.focusMode: FocusMode.app.rawValue,
             Key.hideWhileDragging: true,
             Key.dimMenuBar: true,
+            Key.highlightUnderPointer: false,
             Key.shortcutKeyCode: Int(Shortcut.default.keyCode),
             Key.shortcutModifiers: Int(Shortcut.default.modifiers),
             Key.shortcutDisplay: Shortcut.default.display,
@@ -102,6 +105,12 @@ final class Settings {
     var dimMenuBar: Bool {
         get { d.bool(forKey: Key.dimMenuBar) }
         set { d.set(newValue, forKey: Key.dimMenuBar); onChange?(.menuBarCoverage) }
+    }
+
+    /// A dimmed window the pointer rests on for a few seconds is shown bright, without becoming active.
+    var highlightUnderPointer: Bool {
+        get { d.bool(forKey: Key.highlightUnderPointer) }
+        set { d.set(newValue, forKey: Key.highlightUnderPointer); onChange?(.pointerHighlight) }
     }
 
     /// Global shortcut that turns the effect on and off; nil = none.

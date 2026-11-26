@@ -15,11 +15,8 @@ import AppKit
 /// - jitter below `reverseThreshold` doesn't count as a change of direction;
 /// - one shake toggles once: after it fires, the pointer has to rest for `rearmRest` before the next one counts,
 ///   so a long shake with short breaks in it doesn't toggle on and off again.
-/// Only plain moves count (not drags), so moving windows or files never triggers it.
-///
-/// Mouse moves come from a listen-only CGEventTap: it gets them straight from WindowServer, about three times
-/// cheaper than an NSEvent global monitor (no NSEvent wrapping or AppKit dispatch).
-/// A listen-only tap for mouse moves needs no permission. The work per event is a few arithmetic operations.
+/// Pointer moves come from PointerMonitor (plain moves only, not drags). The work per move is a few arithmetic
+/// operations.
 final class ShakeDetector {
     var onShake: (() -> Void)?
 
@@ -50,8 +47,6 @@ final class ShakeDetector {
         let turn: CGPoint
     }
 
-    private var tap: CFMachPort?
-    private var source: CFRunLoopSource?
     private var lastTime: TimeInterval = 0
     private var last = CGPoint.zero
     /// The current stroke: where it started, its farthest point from there, and the path length travelled.
@@ -66,46 +61,8 @@ final class ShakeDetector {
     private var strokes: [Stroke] = []
     private var armed = true
 
-    func start() {
-        guard tap == nil else { return }
-        let callback: CGEventTapCallBack = { _, type, event, context in
-            guard let context else { return Unmanaged.passUnretained(event) }
-            let me = Unmanaged<ShakeDetector>.fromOpaque(context).takeUnretainedValue()
-            switch type {
-            case .mouseMoved:
-                me.moved(event.location, at: ProcessInfo.processInfo.systemUptime)
-            case .tapDisabledByTimeout, .tapDisabledByUserInput:
-                // macOS turns a tap off if it's ever too slow; turn it back on.
-                if let tap = me.tap { CGEvent.tapEnable(tap: tap, enable: true) }
-            default:
-                break
-            }
-            return Unmanaged.passUnretained(event)
-        }
-        guard let tap = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .tailAppendEventTap, options: .listenOnly,
-                                          eventsOfInterest: CGEventMask(1 << CGEventType.mouseMoved.rawValue),
-                                          callback: callback, userInfo: Unmanaged.passUnretained(self).toOpaque())
-        else {
-            log.error("couldn't create the event tap for shake to toggle")
-            return
-        }
-        let source = CFMachPortCreateRunLoopSource(nil, tap, 0)
-        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
-        CGEvent.tapEnable(tap: tap, enable: true)
-        self.tap = tap
-        self.source = source
-    }
-
-    func stop() {
-        if let tap {
-            CGEvent.tapEnable(tap: tap, enable: false)
-            CFMachPortInvalidate(tap)
-        }
-        if let source { CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes) }
-        tap = nil
-        source = nil
-        reset(at: .zero, time: 0)
-    }
+    /// Forgets the shake in progress (e.g. when shake to toggle is turned off).
+    func reset() { reset(at: .zero, time: 0) }
 
     private func reset(at p: CGPoint, time: TimeInterval) {
         strokes.removeAll()
@@ -126,7 +83,7 @@ final class ShakeDetector {
     private static func distance(_ a: CGPoint, _ b: CGPoint) -> CGFloat { hypot(a.x - b.x, a.y - b.y) }
 
     /// p is in global screen coordinates; only its changes matter, so the origin doesn't.
-    private func moved(_ p: CGPoint, at now: TimeInterval) {
+    func moved(_ p: CGPoint, at now: TimeInterval) {
         defer { lastTime = now; last = p }
         if now - lastTime > rearmRest { armed = true }
         if now - lastTime > maxPause { reset(at: p, time: now); return }

@@ -19,11 +19,11 @@ de una muestra a otra y entre Macs, así que son aproximadas, no garantías.
 | Puntero en movimiento continuo, 120 movimientos/s (efecto activado) | ~1,5 % | ~2 | ~1,5 |
 
 La app no tiene temporizadores propios; las ~2 activaciones restantes son, muy probablemente, tareas internas de
-AppKit. Mientras el puntero se mueve, la app recibe cada movimiento del ratón para la función de agitar el puntero;
-deja de costar nada en cuanto el puntero se detiene, y al desactivar esa función el coste desaparece por completo.
-Los movimientos llegan por un `CGEventTap` de solo lectura. El análisis de cada movimiento son un par de
-comparaciones; casi todo el coste está en despertar para recibir el evento, por lo que crece con la frecuencia de
-eventos del puntero (hasta 120 movimientos/s en una pantalla ProMotion).
+AppKit. Mientras el puntero se mueve, la app recibe cada movimiento del ratón para la función de agitar el puntero y,
+si está activada, para iluminar la ventana bajo el puntero (un solo `CGEventTap` de solo lectura sirve a ambas); deja
+de costar nada en cuanto el puntero se detiene, y al desactivar ambas el coste desaparece por completo. El análisis de
+cada movimiento son un par de comparaciones; casi todo el coste está en despertar para recibir el evento, por lo que
+crece con la frecuencia de eventos del puntero (hasta 120 movimientos/s en una pantalla ProMotion).
 
 Como referencia, en muestras de 3 s Finder tuvo ~160 activaciones en reposo, Dock ~230 y WindowManager ~400. Una
 pestaña de navegador típica tiene un impacto energético de unidades o decenas.
@@ -47,7 +47,8 @@ Todo reacciona a eventos y no hace nada entre ellos:
 - Algunos eventos van seguidos de comprobaciones puntuales breves (a los 0,12 s y 0,4 s), porque WindowServer sube
   las ventanas un poco después de que lleguen los eventos. Solo se ejecutan tras un evento, nunca en segundo plano.
 - Los clics y arrastres del ratón (Quitar el efecto al arrastrar) usan monitores de eventos globales; el gesto de
-  agitar, un event tap de solo lectura. Cada evento del ratón cuesta un par de comparaciones.
+  agitar y la iluminación de la ventana bajo el puntero comparten un event tap de solo lectura. Cada evento del ratón
+  cuesta un par de comparaciones.
 - El atajo de teclado usa la API de hotkeys de Carbon: el sistema llama a la app solo al pulsar las teclas.
 - La superposición son capas estáticas de Core Animation que compone WindowServer. La textura del grano se genera una
   sola vez. En reposo no se anima nada.

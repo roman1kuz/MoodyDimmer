@@ -7,6 +7,7 @@
 "All App Windows" = "Все окна приложения";
 "Dim Menu Bar" = "Затемнять строку меню";
 "Hide While Dragging" = "Убирать эффект при перетаскивании";
+"Highlight Window Under Pointer" = "Подсвечивать окно под курсором";
 "Effect" = "Эффект";
 "Dim" = "Затемнение";
 "Blur" = "Размытие";

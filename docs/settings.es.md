@@ -14,6 +14,7 @@ así que puedes cambiar varias seguidas.
 | Mantener iluminado | Todas las ventanas de la app |
 | Quitar el efecto al arrastrar | activado |
 | Oscurecer la barra de menús | activado |
+| Iluminar la ventana bajo el puntero | desactivado |
 | Oscurecer / Desenfoque / Grano | 50 % / no / no |
 | Animación | 150 ms |
 | Atajo de teclado | ⌃⌥⌘D |
@@ -40,7 +41,8 @@ Qué sigue iluminado mientras todo lo demás se oscurece:
 
 - **Solo la ventana activa**: solo la ventana delantera de la app activa. Foco estricto en una sola ventana.
 - **Todas las ventanas de la app**: todas las ventanas visibles de la app activa, para que un diálogo o un panel no
-  oscurezca la ventana principal de la app. Las ventanas de otras apps que queden encima siguen oscurecidas.
+  oscurezca la ventana principal de la app. Una ventana de otra app que quede entre las ventanas de la app se ilumina
+  entera, para que no parezca un parche oscuro sobre ellas.
 
 Cuando la app activa no tiene ventanas (cerraste la última, o una app se cerró y el foco no pasó a ninguna parte),
 sigue iluminada con la misma regla la ventana superior que quede en pantalla, para que las ventanas restantes no se
@@ -54,6 +56,13 @@ pierdan en el fondo oscurecido. En el escritorio (Finder activo sin ventanas) y 
   menús es translúcida, así que con un oscurecimiento fuerte se vuelve oscura mientras sus iconos pueden seguir
   oscuros. Desactívalo para que el efecto termine en el borde inferior de la barra de menús. Con la barra de menús
   oculta automáticamente, el efecto siempre cubre toda la pantalla.
+- **Iluminar la ventana bajo el puntero**: cuando el puntero se detiene 1,5 segundos sobre una ventana oscurecida, el
+  efecto pasa por debajo de esa ventana, así que se ven ella y todas las ventanas que tiene encima; no pasa a estar
+  activa. A partir de ahí, mover el puntero a otra ventana que no sea la activa lleva el efecto debajo de esa ventana,
+  y moverlo a la ventana activa, al escritorio, a la barra de menús o al Dock hace que el efecto vuelva. Solo
+  participan las ventanas oscurecidas: no el escritorio, la barra de menús, el Dock ni las ventanas que ya están
+  iluminadas. Desactivado por defecto. Mientras está activado, la app sigue el puntero, con el mismo coste que *Agitar
+  el puntero para alternar* (compartido si ambos están activados).
 
 ## Efecto
 
@@ -86,7 +95,7 @@ permisos adicionales.
   importa. Cada sacudida alterna el efecto una sola vez; para volver a alternarlo, deja quieto el puntero un momento.
   No lo activan los vaivenes lentos, los movimientos en círculo, un zigzag que cruza la pantalla, el apuntar pasándose
   del objetivo ni arrastrar. Si no lo usas, desactívalo: así la app deja de recibir los movimientos del puntero por
-  completo.
+  completo (salvo que *Iluminar la ventana bajo el puntero* esté activado).
 
 ## Icono de la barra de menús
 

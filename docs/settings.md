@@ -14,6 +14,7 @@ several in a row.
 | Keep Bright | All App Windows |
 | Hide While Dragging | on |
 | Dim Menu Bar | on |
+| Highlight Window Under Pointer | off |
 | Dim / Blur / Grain | 50 % / off / off |
 | Animation | 150 ms |
 | Keyboard Shortcut | ⌃⌥⌘D |
@@ -38,8 +39,9 @@ app (dialogs, a second window, windows being moved).
 What stays bright while everything else is dimmed:
 
 - **Active Window Only**: only the front window of the active app. Strict focus on one window.
-- **All App Windows**: every visible window of the active app, so a dialog or panel doesn't dim the app's main
-  window. Other apps' windows that lie on top of them stay dimmed.
+- **All App Windows**: every visible window of the active app, so a dialog or panel doesn't dim the app's main window.
+  Another app's window lying between the app's windows is shown bright as a whole, so it doesn't sit like a dark patch
+  on them.
 
 When the active app has no windows (you closed its last one, or an app quit and focus went nowhere), the top window
 left on screen stays bright with the same rule, so the remaining windows don't sit in the dimmed background. On the
@@ -52,6 +54,12 @@ desktop (Finder active without windows) and on an empty screen there's no effect
 - **Dim Menu Bar**: the effect covers the menu bar too. The menu bar is translucent in macOS 26 and later, so with
   strong dimming it gets dark while its icons may stay dark. Turn this off to stop the effect at the bottom edge of
   the menu bar. With an auto-hiding menu bar the effect always covers the whole screen.
+- **Highlight Window Under Pointer**: when the pointer rests on a dimmed window for 1.5 seconds, the effect moves
+  below that window, so it and every window above it become visible; it doesn't become active. From then on, moving
+  the pointer onto another window that isn't the active one moves the effect below that window, and moving it onto the
+  active window, the desktop, the menu bar or the Dock brings the effect back. Only dimmed windows take part: not the
+  desktop, the menu bar, the Dock or windows that are bright anyway. Off by default. While it's on, the app follows
+  the pointer, at the same cost as *Shake Pointer to Toggle* (shared when both are on).
 
 ## Effect
 
@@ -82,7 +90,7 @@ Two ways to turn the effect on or off without opening the menu. Both work in any
   wiggle to a swing of about a third of the screen works, and a slight arc is fine. One shake toggles once; to toggle
   again, hold the pointer still for a moment first. Slow back-and-forth moves, circling the pointer, a zigzag that
   travels across the screen, pointing with an overshoot and dragging don't trigger it. Turn it off if you don't use
-  it: then the app stops receiving pointer moves altogether.
+  it: then the app stops receiving pointer moves altogether (unless *Highlight Window Under Pointer* is on).
 
 ## Menu Bar Icon
 

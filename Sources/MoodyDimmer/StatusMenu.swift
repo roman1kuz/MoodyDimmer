@@ -491,6 +491,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     private var modeAppRow: CheckRow!
     private var hideDragRow: CheckRow!
     private var menuBarRow: CheckRow!
+    private var peekRow: CheckRow!
     private var loginRow: CheckRow!
     private var updateRow: UpdateRow!
     private var shortcutItem: NSMenuItem!
@@ -553,6 +554,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         modeAppRow = check("All App Windows") { $0.settings.focusMode = .app }
         hideDragRow = check("Hide While Dragging") { $0.settings.hideWhileDragging.toggle() }
         menuBarRow = check("Dim Menu Bar") { $0.settings.dimMenuBar.toggle() }
+        peekRow = check("Highlight Window Under Pointer") { $0.settings.highlightUnderPointer.toggle() }
         shakeRow = check("Shake Pointer to Toggle") { $0.settings.shakeToToggle.toggle() }
         loginRow = check("Launch at Login") { $0.toggleLogin() }
         shortcutItem = item("Keyboard Shortcut", #selector(changeShortcut))
@@ -616,6 +618,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             header(L("Behavior")),
             rowItem(hideDragRow),
             rowItem(menuBarRow),
+            rowItem(peekRow),
             .separator(),
             header(L("Effect")),
             dimItem, blurItem, grainItem, animItem,
@@ -666,6 +669,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         modeAppRow.isOn = settings.focusMode == .app
         hideDragRow.isOn = settings.hideWhileDragging
         menuBarRow.isOn = settings.dimMenuBar
+        peekRow.isOn = settings.highlightUnderPointer
         loginRow.isOn = SMAppService.mainApp.status == .enabled
         shortcutItem.title = "\(L("Keyboard Shortcut")): \(settings.shortcut?.display ?? L("None"))…"
         shakeRow.isOn = settings.shakeToToggle

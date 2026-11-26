@@ -7,12 +7,22 @@
 - Each screen gets one transparent overlay window that lets clicks through. It's placed directly below the window
   that stays bright (`NSWindow.order(.below, relativeTo:)`), so everything above it is bright and everything below
   it gets the effect.
-- In *All App Windows* mode the overlay has holes cut out for the app's other windows (a `CAShapeLayer` mask). Areas
-  covered by other apps' windows are subtracted from the holes.
+- In *All App Windows* mode the overlay has holes cut out for the app's other windows (a `CAShapeLayer` mask). Another
+  app's window lying over one of those windows (between the app's windows) gets a hole too, for its whole visible
+  part, so it doesn't sit like a dark patch on the bright windows.
 - On a focus change the overlay isn't swapped or faded as a whole: only its mask animates, in the areas of the
   windows that brighten or dim. The rest of the screen keeps exactly the same dimming and blur throughout.
 - Before the overlay is moved below a window, the app checks that the window is still on screen. Ordering below a
   window that's gone would put the overlay below every window.
+- *Highlight Window Under Pointer* moves the overlay below the window under the pointer, so it and every window above
+  it are bright; the reveal and the return use the same mask animation as a focus change. The 1.5 seconds count while
+  the pointer stays over windows of the same app, since many apps draw one window as several. Once the effect is
+  lowered, moving to another window applies after 0.3 s, so passing over gaps and background windows on the way
+  doesn't count. When finding the window under the pointer, floating windows of other apps on other levels (such as a
+  notch utility's mostly transparent panel) are ignored; only macOS's own UI, like the Dock and the menu bar, blocks
+  it. The pointer is checked against the bright area and a cached list of window frames; the window list itself is
+  read only when the pointer enters a dimmed area, a few times a second at most while it moves there, and when a delay
+  ends.
 
 ## Tracking focus
 

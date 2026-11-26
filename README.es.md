@@ -9,6 +9,7 @@ activa.
 
 - Oscurecer, desenfoque o ambos, con grano opcional, cada uno con su propia intensidad.
 - Mantiene iluminada la ventana activa o todas las ventanas de la app activa.
+- Opcionalmente descubre la ventana sobre la que el puntero se detiene 1,5 segundos, junto con las ventanas que tiene encima.
 - Transiciones suaves al cambiar el foco; el fondo nunca parpadea.
 - Se aparta a pantalla completa, en Mission Control, en Mostrar escritorio y al arrastrar archivos a otra app.
 - Activación rápida con un atajo de teclado (⌃⌥⌘D) o agitando el puntero.

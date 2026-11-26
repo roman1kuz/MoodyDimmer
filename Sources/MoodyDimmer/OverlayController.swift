@@ -9,6 +9,8 @@ private final class ScreenOverlay {
     /// What's bright now (top window + holes) and the holes alone, global Cocoa coordinates.
     var bright: CGPath?
     var holes: CGPath?
+    /// The window highlighted under the pointer, if any.
+    var peekID: CGWindowID?
     /// A focus change is animating; the final reorder and mask come when it ends.
     var transitioning = false
 
@@ -94,9 +96,10 @@ final class OverlayController {
                 // Appearing: the whole overlay fades in.
                 place(s, target: t)
                 fade(w, to: 1, duration: d)
-            } else if d > 0, s.topID != t.topID || hasOtherWindowsAbove(t) {
+            } else if d > 0, s.topID != t.topID || hasOtherWindowsAbove(t) || s.peekID != t.peekID {
                 // Another window, or the same one with other windows above the overlay that we didn't know were
-                // bright (e.g. a just-launched app's window): they dim smoothly instead of at once.
+                // bright (e.g. a just-launched app's window): they dim smoothly instead of at once. The window under
+                // the pointer brightens and dims the same way.
                 switchWindows(s, to: t, duration: d)
             } else if s.transitioning, s.topID == t.topID {
                 // A recheck while the change to this window is still animating: it ends in the same place.
@@ -109,6 +112,7 @@ final class OverlayController {
             s.topID = t.topID
             s.bright = t.brightRegion
             s.holes = t.holes
+            s.peekID = t.peekID
         }
     }
 
@@ -118,7 +122,7 @@ final class OverlayController {
         s.transitioning = false
         w.effectView.setMask(maskPath(holes: t.holes, screenFrame: s.screenFrame))
         w.wantVisible = true
-        orderBelow(w, t.topID)
+        orderBelow(w, t.orderBelowID)
         w.effectView.windowDidOrderIn()
     }
 
@@ -144,17 +148,18 @@ final class OverlayController {
             fadeIn = oldBright.subtracting(t.brightRegion)
             fadeOut = newHoles.subtracting(oldBright)
             fixed = full.subtracting(oldBright).subtracting(newHoles)
-            before = { [weak self] in self?.orderBelow(w, t.topID) }
+            before = { [weak self] in self?.orderBelow(w, t.orderBelowID) }
             after = { w.effectView.setMask(final) }
         } else {
-            // The active window went away and a window under the overlay takes over: it brightens in place,
-            // and the overlay moves below it once it's fully uncovered.
+            // The active window went away and a window under the overlay takes over (or the effect moves below the
+            // window under the pointer): it brightens in place, and the overlay moves below it once it's fully
+            // uncovered.
             fadeOut = t.brightRegion.subtracting(oldHoles)
             fadeIn = oldHoles.subtracting(t.brightRegion)
             fixed = full.subtracting(t.brightRegion).subtracting(oldHoles)
             before = {}
             after = { [weak self] in
-                self?.orderBelow(w, t.topID)
+                self?.orderBelow(w, t.orderBelowID)
                 w.effectView.setMask(final)
             }
         }
@@ -206,6 +211,7 @@ final class OverlayController {
     private func hide(_ s: ScreenOverlay, duration d: TimeInterval) {
         let w = s.window
         s.topID = nil
+        s.peekID = nil
         s.transitioning = false
         w.wantVisible = false
         guard w.isVisible else { return }

@@ -7,6 +7,7 @@
 "All App Windows" = "Todas las ventanas de la app";
 "Dim Menu Bar" = "Oscurecer la barra de menús";
 "Hide While Dragging" = "Quitar el efecto al arrastrar";
+"Highlight Window Under Pointer" = "Iluminar la ventana bajo el puntero";
 "Effect" = "Efecto";
 "Dim" = "Oscurecer";
 "Blur" = "Desenfoque";

@@ -8,6 +8,7 @@ A macOS menu bar app that dims, blurs or adds film grain to everything except th
 
 - Dim, blur or both, with optional film grain, each with its own strength.
 - Keeps either the active window or all of the active app's windows bright.
+- Optionally reveals the window the pointer rests on for 1.5 seconds, along with the windows above it.
 - Smooth transitions on focus changes; the background never flickers.
 - Steps aside in full screen, Mission Control, Show Desktop and while dragging files to another app.
 - Quick toggle with a keyboard shortcut (⌃⌥⌘D) or by shaking the pointer.

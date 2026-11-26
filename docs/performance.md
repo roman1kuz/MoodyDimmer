@@ -18,11 +18,11 @@ sample to sample and between Macs, so they're approximate, not guarantees.
 | Switching windows by clicking every 0.4 s (dim + blur) | ~1 % | — | ~1 |
 | Pointer moving all the time, 120 moves/s (effect on) | ~1.5 % | ~2 | ~1.5 |
 
-The app has no timers of its own; the ~2 remaining wakeups are most likely AppKit housekeeping.
-While the pointer moves, the app receives every mouse move for shake-to-toggle; it stops costing anything as soon
-as the pointer stops, and turning shake-to-toggle off removes it entirely. The moves come from a listen-only
-`CGEventTap`. The per-move analysis is a few comparisons; almost all of the cost is waking up to receive the event,
-so it grows with the pointer's event rate (up to 120 moves/s on a ProMotion display).
+The app has no timers of its own; the ~2 remaining wakeups are most likely AppKit housekeeping. While the pointer
+moves, the app receives every mouse move for shake-to-toggle and, if it's on, Highlight Window Under Pointer (one
+listen-only `CGEventTap` serves both); it stops costing anything as soon as the pointer stops, and turning both off
+removes it entirely. The per-move analysis is a few comparisons; almost all of the cost is waking up to receive the
+event, so it grows with the pointer's event rate (up to 120 moves/s on a ProMotion display).
 
 For scale, in 3 s samples Finder had ~160 idle wakeups, Dock ~230 and WindowManager ~400. A typical browser
 tab has an energy impact in the units or tens.
@@ -43,8 +43,8 @@ Everything reacts to events and does nothing in between:
   that the bright window being destroyed triggers an update at once.
 - Short one-off rechecks (0.12 s and 0.4 s) follow some events, because WindowServer raises windows a little
   later than the events arrive. They run only after an event, never in the background.
-- Mouse clicks and drags (Hide While Dragging) use global event monitors, the shake gesture a listen-only event
-  tap. Each mouse event costs a couple of comparisons.
+- Mouse clicks and drags (Hide While Dragging) use global event monitors; the shake gesture and Highlight Window
+  Under Pointer share one listen-only event tap. Each mouse event costs a couple of comparisons.
 - The keyboard shortcut uses the Carbon hotkey API: the system calls the app only when the keys are pressed.
 - The overlay is static Core Animation layers composited by WindowServer. The grain texture is generated once.
   Nothing animates while idle.
