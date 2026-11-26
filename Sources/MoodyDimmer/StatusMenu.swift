@@ -70,10 +70,10 @@ private final class CapsuleSlider: NSView {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     override func mouseDown(with event: NSEvent) {
-        set(fromX: convert(event.locationInWindow, from: nil).x)
+        set(fromX: convert(event.locationInWindow, from: nil).x, haptic: Haptics.isFromTrackpad(event))
         // Track the drag here: inside a menu the events come through the menu's tracking loop.
         while let e = window?.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
-            set(fromX: convert(e.locationInWindow, from: nil).x)
+            set(fromX: convert(e.locationInWindow, from: nil).x, haptic: Haptics.isFromTrackpad(e))
             if e.type == .leftMouseUp { break }
         }
     }
@@ -81,20 +81,31 @@ private final class CapsuleSlider: NSView {
     override func scrollWheel(with event: NSEvent) {
         let delta = event.hasPreciseScrollingDeltas ? event.scrollingDeltaX - event.scrollingDeltaY
                                                     : (event.deltaX - event.deltaY) * 8
-        setFraction(fraction + delta / max(bounds.width - bounds.height, 1))
+        setFraction(fraction + delta / max(bounds.width - bounds.height, 1),
+                    haptic: Haptics.isScrollFromTrackpad(event))
     }
 
-    private func set(fromX x: CGFloat) {
+    private func set(fromX x: CGFloat, haptic: Bool) {
         // Inverse of the fill geometry, so the end circle (and the symbol in it) stays under the pointer.
         let h = bounds.height
-        setFraction((x - h / 2) / max(bounds.width - h, 1))
+        setFraction((x - h / 2) / max(bounds.width - h, 1), haptic: haptic)
     }
 
-    private func setFraction(_ f: CGFloat) {
+    /// `haptic`: the input comes from a trackpad, which can tap back (see Haptics).
+    private func setFraction(_ f: CGFloat, haptic: Bool = false) {
+        let old = fraction
         let v = minValue + Double(min(max(f, 0), 1)) * (maxValue - minValue)
         guard v != doubleValue else { return }
         doubleValue = v
         onChange?(v)
+        if haptic { tickIfStepCrossed(from: old, to: fraction) }
+    }
+
+    /// A trackpad tap at every 1 % step, growing with the value, a slightly firmer one at the top end, none at 0.
+    private func tickIfStepCrossed(from old: CGFloat, to new: CGFloat) {
+        let step: (CGFloat) -> Int = { Int(($0 * 100).rounded(.down)) }
+        guard new > 0, step(old) != step(new) || new >= 1 else { return }
+        Haptics.sliderStep(fraction: Double(new), atEnd: new >= 1)
     }
 
     // MARK: Accessibility
@@ -496,6 +507,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     private var updateRow: UpdateRow!
     private var shortcutItem: NSMenuItem!
     private var shakeRow: CheckRow!
+    private var hapticsRow: CheckRow!
     private var permissionItem: NSMenuItem!
     private var iconStyleItems: [NSMenuItem] = []
     private var iconThemeItems: [NSMenuItem] = []
@@ -556,6 +568,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         menuBarRow = check("Dim Menu Bar") { $0.settings.dimMenuBar.toggle() }
         peekRow = check("Highlight Window Under Pointer") { $0.settings.highlightUnderPointer.toggle() }
         shakeRow = check("Shake Pointer to Toggle") { $0.settings.shakeToToggle.toggle() }
+        hapticsRow = check("Haptic Feedback") { $0.settings.haptics.toggle() }
         loginRow = check("Launch at Login") { $0.toggleLogin() }
         shortcutItem = item("Keyboard Shortcut", #selector(changeShortcut))
 
@@ -619,10 +632,12 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             rowItem(hideDragRow),
             rowItem(menuBarRow),
             rowItem(peekRow),
+            rowItem(hapticsRow),
             .separator(),
             header(L("Effect")),
             dimItem, blurItem, grainItem, animItem,
             .separator(),
+
             header(L("Quick Toggle")),
             shortcutItem,
             rowItem(shakeRow),
@@ -673,6 +688,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         loginRow.isOn = SMAppService.mainApp.status == .enabled
         shortcutItem.title = "\(L("Keyboard Shortcut")): \(settings.shortcut?.display ?? L("None"))…"
         shakeRow.isOn = settings.shakeToToggle
+        hapticsRow.isOn = settings.haptics
         dimRow.set(settings.dimStrength)
         blurRow.set(settings.blurStrength)
         grainRow.set(settings.grainStrength)

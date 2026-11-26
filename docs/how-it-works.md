@@ -50,6 +50,14 @@
   unused.
 - Dim is a black layer; grain is a noise tile generated once and tiled.
 
+## Haptic feedback
+
+The taps drive the trackpad's Force Touch actuator directly, through private MultitouchSupport functions loaded
+with `dlsym` (the way HapticKey does): unlike `NSHapticFeedbackManager`, they can vary in strength and work while
+the system haptic feedback is off. The actuator is opened on the first tap and closed after 3 seconds without
+taps. If the functions are ever missing, the app falls back to `NSHapticFeedbackManager`. Whether input comes from
+a trackpad is read from the event itself (its touch subtype; for scrolling, its gesture phase).
+
 ## Troubleshooting
 
 If the effect sometimes doesn't work, check the log:

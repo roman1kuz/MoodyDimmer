@@ -16,6 +16,7 @@ enum SettingsChange {
     case menuBarCoverage
     case pointerHighlight
     case quickToggle
+    case haptics
     case strength     // sliders: applied instantly
     case animation
     case menuBarIcon
@@ -40,6 +41,7 @@ final class Settings {
         static let shortcutModifiers = "shortcutModifiers"
         static let shortcutDisplay = "shortcutDisplay"
         static let shakeToToggle = "shakeToToggle"
+        static let haptics = "haptics"
         static let legacyEffect = "effect"   // 0.x–1.0: dim / blur / both, before the sliders alone chose it
         static let dim = "dimStrength"
         static let blur = "blurStrength"
@@ -62,6 +64,7 @@ final class Settings {
             Key.shortcutModifiers: Int(Shortcut.default.modifiers),
             Key.shortcutDisplay: Shortcut.default.display,
             Key.shakeToToggle: true,
+            Key.haptics: true,
             Key.dim: 0.5,
             Key.blur: 0.0,
             Key.grain: 0.0,
@@ -132,6 +135,12 @@ final class Settings {
     var shakeToToggle: Bool {
         get { d.bool(forKey: Key.shakeToToggle) }
         set { d.set(newValue, forKey: Key.shakeToToggle); onChange?(.quickToggle) }
+    }
+
+    /// Light trackpad taps while dragging the sliders and when shaking the pointer toggles the effect.
+    var haptics: Bool {
+        get { d.bool(forKey: Key.haptics) }
+        set { d.set(newValue, forKey: Key.haptics); onChange?(.haptics) }
     }
 
     /// 0…1, 0 = off

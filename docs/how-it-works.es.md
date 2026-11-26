@@ -56,6 +56,15 @@
   completo cuando no se usa.
 - Oscurecer es una capa negra; el grano es una textura de ruido generada una sola vez y repetida en mosaico.
 
+## Respuesta háptica
+
+Los toques controlan directamente el actuador Force Touch del trackpad mediante funciones privadas de
+MultitouchSupport cargadas con `dlsym` (como hace HapticKey): a diferencia de `NSHapticFeedbackManager`, su
+intensidad puede variar y funcionan con la respuesta háptica del sistema desactivada. El actuador se abre con el
+primer toque y se cierra tras 3 segundos sin toques. Si alguna vez faltan esas funciones, la app recurre a
+`NSHapticFeedbackManager`. Si la entrada viene de un trackpad se sabe por el propio evento (su subtipo touch; al
+desplazar, su fase de gesto).
+
 ## Solución de problemas
 
 Si a veces el efecto no funciona, revisa el registro:

@@ -35,7 +35,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Quick toggle: a global shortcut and shaking the pointer. Both stay active while the effect
         // is off, so they can turn it back on.
         hotKey.onPress = { [weak self] in self?.settings.enabled.toggle() }
-        shake.onShake = { [weak self] in self?.settings.enabled.toggle() }
+        shake.onShake = { [weak self] in
+            guard let self else { return }
+            self.settings.enabled.toggle()
+            if self.pointer.lastMoveFromTrackpad { Haptics.toggled(on: self.settings.enabled) }
+        }
         pointer.onMove = { [weak self] p, time in
             guard let self else { return }
             if self.settings.shakeToToggle { self.shake.moved(p, at: time) }
@@ -113,7 +117,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .language:
             Localization.use(settings.language)
             menu.buildMenu()
-        case .animation, .menuBarIcon:
+        case .animation, .menuBarIcon, .haptics:
             break  // the menu reads these itself (menu.sync() above)
         }
     }

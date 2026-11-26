@@ -11,6 +11,8 @@ final class PointerMonitor {
     var onMove: ((CGPoint, TimeInterval) -> Void)?
     /// Any mouse button went down.
     var onButton: (() -> Void)?
+    /// The last pointer move came from a trackpad rather than a mouse (for haptic feedback).
+    private(set) var lastMoveFromTrackpad = false
 
     private var tap: CFMachPort?
     private var source: CFRunLoopSource?
@@ -24,6 +26,7 @@ final class PointerMonitor {
             let me = Unmanaged<PointerMonitor>.fromOpaque(context).takeUnretainedValue()
             switch type {
             case .mouseMoved:
+                me.lastMoveFromTrackpad = Haptics.isFromTrackpad(event)
                 me.onMove?(event.location, ProcessInfo.processInfo.systemUptime)
             case .leftMouseDown, .rightMouseDown, .otherMouseDown:
                 me.onButton?()
