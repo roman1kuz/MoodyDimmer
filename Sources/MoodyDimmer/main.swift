@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         tracker.mode = settings.focusMode
         tracker.dimOtherScreens = !settings.dimActiveScreenOnly
+        tracker.keepTiledBright = settings.keepTiledBright
         tracker.onTarget = { [weak self] target in self?.overlays.update(target: target) }
         overlays.onStale = { [weak self] in self?.tracker.scheduleUpdate() }
 
@@ -116,6 +117,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .activeScreenOnly:
             peek.reset()  // a window highlighted on another screen
             tracker.dimOtherScreens = !settings.dimActiveScreenOnly
+        case .tiling:
+            tracker.keepTiledBright = settings.keepTiledBright
         case .pointerHighlight:
             updatePointerMonitor()
         case .quickToggle:

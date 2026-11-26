@@ -14,6 +14,7 @@ así que puedes cambiar varias seguidas.
 | Mantener iluminado | Todas las ventanas de la app |
 | Quitar el efecto al arrastrar | activado |
 | Oscurecer la barra de menús | activado |
+| No oscurecer las ventanas en mosaico | activado |
 | Oscurecer solo la pantalla activa | desactivado |
 | Iluminar la ventana bajo el puntero | desactivado |
 | Respuesta háptica del trackpad | activado |
@@ -59,6 +60,13 @@ pierdan en el fondo oscurecido. En el escritorio (Finder activo sin ventanas) y 
   menús es translúcida, así que con un oscurecimiento fuerte se vuelve oscura mientras sus iconos pueden seguir
   oscuros. Desactívalo para que el efecto termine en el borde inferior de la barra de menús. Con la barra de menús
   oculta automáticamente, el efecto siempre cubre toda la pantalla.
+- **No oscurecer las ventanas en mosaico**: las ventanas colocadas junto a la activa (en mitades, tercios o cuartos de
+  la pantalla con macOS, Rectangle, Magnet y similares) siguen iluminadas con ella, así que cambiar entre ellas no
+  produce destellos. macOS no indica qué ventanas están en mosaico, así que se deduce por su alineación: no se
+  superponen, se tocan por un borde y cada una está pegada a los bordes de la pantalla (sin la barra de menús ni el
+  Dock), en una esquina o a lo alto o ancho de toda ella. No hace falta llenar la pantalla: tres cuartos con el cuarto
+  restante vacío también cuentan. Las ventanas que simplemente están una al lado de otra no cuentan. Si una ventana de otra app en el mosaico cambia de tamaño por su
+  cuenta, se tiene en cuenta en el siguiente clic o cambio de ventana.
 - **Oscurecer solo la pantalla activa**: con varias pantallas, solo la de la ventana activa recibe el efecto (la que
   contiene la mayor parte de la ventana); las demás se quedan como están, por ejemplo con documentación o un chat en
   un segundo monitor. El efecto pasa de una pantalla a otra con la ventana activa. Desactivado por defecto: entonces
@@ -68,7 +76,9 @@ pierdan en el fondo oscurecido. En el escritorio (Finder activo sin ventanas) y 
 - **Iluminar la ventana bajo el puntero**: cuando el puntero se detiene 1,5 segundos sobre una ventana oscurecida, el
   efecto pasa por debajo de esa ventana, así que se ven ella y todas las ventanas que tiene encima; no pasa a estar
   activa. A partir de ahí, mover el puntero a otra ventana que no sea la activa lleva el efecto debajo de esa ventana,
-  y moverlo a la ventana activa, al escritorio, a la barra de menús o al Dock hace que el efecto vuelva. Solo
+  y moverlo a la ventana activa, al escritorio, a la barra de menús o al Dock hace que el efecto vuelva. Una ventana
+  que forma parte de un mosaico (ver *No oscurecer las ventanas en mosaico*) se ilumina con todas las ventanas del
+  mosaico. Solo
   participan las ventanas oscurecidas: no el escritorio, la barra de menús, el Dock ni las ventanas que ya están
   iluminadas. Desactivado por defecto. Mientras está activado, la app sigue el puntero, con el mismo coste que *Agitar
   el puntero para alternar* (compartido si ambos están activados).

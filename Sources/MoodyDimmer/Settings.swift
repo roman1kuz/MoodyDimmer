@@ -15,6 +15,7 @@ enum SettingsChange {
     case dragBehavior
     case menuBarCoverage
     case activeScreenOnly
+    case tiling
     case pointerHighlight
     case quickToggle
     case haptics
@@ -38,6 +39,7 @@ final class Settings {
         static let hideWhileDragging = "hideWhileDragging"
         static let dimMenuBar = "dimMenuBar"
         static let dimActiveScreenOnly = "dimActiveScreenOnly"
+        static let keepTiledBright = "keepTiledBright"
         static let highlightUnderPointer = "highlightUnderPointer"
         static let shortcutKeyCode = "shortcutKeyCode"          // -1 = no shortcut
         static let shortcutModifiers = "shortcutModifiers"
@@ -62,6 +64,7 @@ final class Settings {
             Key.hideWhileDragging: true,
             Key.dimMenuBar: true,
             Key.dimActiveScreenOnly: false,
+            Key.keepTiledBright: true,
             Key.highlightUnderPointer: false,
             Key.shortcutKeyCode: Int(Shortcut.default.keyCode),
             Key.shortcutModifiers: Int(Shortcut.default.modifiers),
@@ -117,6 +120,13 @@ final class Settings {
     var dimActiveScreenOnly: Bool {
         get { d.bool(forKey: Key.dimActiveScreenOnly) }
         set { d.set(newValue, forKey: Key.dimActiveScreenOnly); onChange?(.activeScreenOnly) }
+    }
+
+    /// Windows laid out side by side with the active one (snapped to halves or quarters of the screen) stay bright
+    /// with it.
+    var keepTiledBright: Bool {
+        get { d.bool(forKey: Key.keepTiledBright) }
+        set { d.set(newValue, forKey: Key.keepTiledBright); onChange?(.tiling) }
     }
 
     /// A dimmed window the pointer rests on for a few seconds is shown bright, without becoming active.

@@ -15,8 +15,11 @@ struct FocusTarget: Equatable {
     /// The window the overlay goes right below: the top window, or the window under the pointer while the effect
     /// is moved below it (Highlight Window Under Pointer).
     let orderBelowID: CGWindowID
-    /// Extra holes (the app's other windows minus overlaps), global Cocoa coordinates.
+    /// Extra holes (the app's other windows minus overlaps, windows tiled with the top window), global Cocoa
+    /// coordinates.
     let holes: CGPath?
+    /// Windows laid out side by side with the top window (Keep Tiled Windows Bright): bright with it.
+    let tiledIDs: [CGWindowID]
     /// Screens fully covered by the active window (full screen video, app in full screen).
     /// No effect there: nothing to dim, and in a full screen Space the overlay would end up above the window.
     let fullscreenScreens: [CGRect]
@@ -61,7 +64,7 @@ struct FocusTarget: Equatable {
 
     static func == (a: FocusTarget, b: FocusTarget) -> Bool {
         a.topID == b.topID && a.peekID == b.peekID && a.signature == b.signature && a.fullscreenScreens == b.fullscreenScreens
-            && a.activeScreen == b.activeScreen && a.others == b.others
+            && a.activeScreen == b.activeScreen && a.tiledIDs == b.tiledIDs && a.others == b.others
     }
 }
 
@@ -83,6 +86,14 @@ final class FocusTracker {
     var dimOtherScreens = true {
         didSet {
             guard dimOtherScreens != oldValue, running else { return }
+            refresh(force: true)
+        }
+    }
+
+    /// Windows laid out side by side with the top window stay bright with it (Keep Tiled Windows Bright).
+    var keepTiledBright = true {
+        didSet {
+            guard keepTiledBright != oldValue, running else { return }
             refresh(force: true)
         }
     }
@@ -596,17 +607,29 @@ final class FocusTracker {
         // on the app's bright windows.
         var others: [(rect: CGRect, between: Bool)] = []
         var appWindows: [CGRect] = []
-        // Highlight Window Under Pointer: the window, every window on top of it, and where the overlay is.
+        // Highlight Window Under Pointer: the window, every window on top of it, and where the overlay is. A window
+        // that's part of a layout (Keep Tiled Windows Bright) is highlighted with the whole layout: the overlay goes
+        // below the lowest of its windows. Otherwise which neighbours brighten would depend on their order.
+        var peekGroup: Set<CGWindowID> = []
+        if let peek = peekWindowID, let r = windows.first(where: { $0.id == peek })?.rect {
+            peekGroup = [peek]
+            if keepTiledBright {
+                for t in tiledWindows(top: peek, rect: r, windows: windows, screens: screens, coverCounts: false) {
+                    peekGroup.insert(t.id)
+                }
+            }
+        }
         var allAbove: [CGRect] = []
         var overlaySeen = false
-        var peekRect: CGRect?
-        var peekOccluders: [CGRect] = []
-        var revealed: [CGRect] = []        // the window and everything above it: bright while it's highlighted
-        var peekCovered = false            // the overlay is still above it
-        var peekOrderOK = false            // the overlay already sits right below it
+        var peekFound = false              // the highlighted window itself
+        var peekLowest: CGWindowID?        // the lowest window of its group found so far: the overlay goes below it
+        var peekParts: [(rect: CGRect, occluders: [CGRect])] = []
+        var revealed: [CGRect] = []        // the group and everything above it: bright while it's highlighted
+        var peekCovered = false            // the overlay is still above the lowest one
+        var peekOrderOK = false            // the overlay already sits right below the lowest one
         var peekOrderChecked = false
         // Only the target whose top window it was highlighted over looks for it.
-        var peekPending: Bool { peekWindowID != nil && peekRect == nil && topID != nil && topID == peekForTopID }
+        var peekPending: Bool { !peekGroup.isEmpty && topID != nil && topID == peekForTopID }
         // Windows above the top window (on another display: windows mostly elsewhere that reach onto this one).
         var aboveTop: [CGRect] = []
 
@@ -617,21 +640,25 @@ final class FocusTracker {
                 // The first normal window right below the top window must be our overlay.
                 if topID != nil, !checkedOrder { orderOK = true; checkedOrder = true }
                 if topID == nil { overlayAbove = true }
-                if peekRect != nil, !peekOrderChecked { peekOrderOK = true; peekOrderChecked = true }
+                if peekLowest != nil, !peekOrderChecked { peekOrderOK = true; peekOrderChecked = true }
                 overlaySeen = true
                 continue
             }
 
             guard let rect = w.rect else { continue }
-            if peekRect != nil { peekOrderChecked = true }  // another window between it and the overlay
+            if peekLowest != nil { peekOrderChecked = true }  // another window between it and the overlay
 
             // Only a dimmed window can be highlighted: below the app's top window, and not one of the app's
             // windows that All App Windows keeps bright anyway.
-            if peekPending, w.id == peekWindowID, !(mode == .app && owner == pid) {
-                peekRect = rect
-                peekOccluders = allAbove.filter { $0.intersects(rect) }
+            if peekPending, peekGroup.contains(w.id), !(mode == .app && owner == pid) {
+                peekGroup.remove(w.id)
+                if w.id == peekWindowID { peekFound = true }
+                peekParts.append((rect, allAbove.filter { $0.intersects(rect) }))
                 revealed = allAbove + [rect]
                 peekCovered = overlaySeen
+                peekLowest = w.id
+                peekOrderOK = false
+                peekOrderChecked = false
             }
             allAbove.append(rect)
 
@@ -704,6 +731,13 @@ final class FocusTracker {
                 holes = holes.map { $0.union(p) } ?? p
             }
         }
+        let tiled = keepTiledBright ? tiledWindows(top: topID, rect: topRect, windows: windows, screens: screens) : []
+        for (_, rect) in tiled {
+            signature.append(rect)
+            let p = CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
+            holes = holes.map { $0.union(p) } ?? p
+        }
+        signature.append(.null)
         let active: CGPath = holes.map { topPath.union($0) } ?? topPath
         var bright = active
         if forcedTop != nil, !aboveTop.isEmpty {
@@ -717,21 +751,96 @@ final class FocusTracker {
         }
         var peekRegion: CGPath?
         var peekID: CGWindowID?
-        if let peekRect, let id = peekWindowID {
-            // The effect moves below the window: it and every window above it are bright.
+        if peekFound, let id = peekWindowID {
+            // The effect moves below the window (its layout): it and every window above it are bright.
             signature.append(contentsOf: revealed)
             signature.append(.null)
-            peekRegion = visiblePart(peekRect, minus: peekOccluders)
+            for part in peekParts {
+                let p = visiblePart(part.rect, minus: part.occluders)
+                peekRegion = peekRegion.map { $0.union(p) } ?? p
+            }
             peekID = id
             for rect in revealed {
                 bright = bright.union(CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil))
             }
         }
-        return FocusTarget(topID: topID, orderBelowID: peekID ?? topID, holes: holes, fullscreenScreens: fullscreen,
+        return FocusTarget(topID: topID, orderBelowID: peekID != nil ? peekLowest ?? topID : topID, holes: holes, tiledIDs: tiled.map(\.id),
+                           fullscreenScreens: fullscreen,
                            activeScreen: activeScreen,
                            orderOK: (peekID != nil ? peekOrderOK : orderOK) || fullscreen.contains(where: screens.contains),
                            coveredByOverlay: peekID != nil ? peekCovered : overlayAbove, brightRegion: bright, activeRegion: active,
                            aboveOverlay: above, peekID: peekID, peekRegion: peekRegion, signature: signature)
+    }
+
+    // MARK: - Tiled windows
+
+    /// How far tiled windows may be from each other and from the edges of the screen's usable area (macOS can leave
+    /// margins around tiled windows).
+    private static let tileGap: CGFloat = 20
+    /// How much of the edge two neighbours have to share.
+    private static let tileMinShared: CGFloat = 80
+    /// Overlaps and overhangs this small (window borders) don't count.
+    private static let tileSlack: CGFloat = 8
+
+    /// The windows laid out side by side with the top window: snapped to halves, thirds or quarters of the screen,
+    /// by macOS or a window manager. macOS doesn't tell, so it's judged by alignment, which windows placed by hand
+    /// almost never have:
+    /// - the windows don't overlap and none of them is covered by another window;
+    /// - each lies within the screen's usable area (without the menu bar and the Dock) and is snapped to its edges:
+    ///   in a corner, or across its whole height or width;
+    /// - each touches another one of them along an edge, so they form one group with the top window.
+    /// The layout doesn't have to fill the screen: three quarters with the fourth left empty count too. Windows that
+    /// just happen to stand next to each other don't. The work is a few rectangle comparisons per window on the
+    /// display, done only when the target is rebuilt anyway.
+    ///
+    /// `coverCounts` false: windows in front of the layout don't break it (for a layout that's dimmed and about to be
+    /// highlighted: the overlay goes below it, so whatever covers it is bright anyway).
+    private func tiledWindows(top: CGWindowID, rect topRect: CGRect, windows: [ListedWindow], screens: [CGRect],
+                              coverCounts: Bool = true) -> [(id: CGWindowID, rect: CGRect)] {
+        guard let display = Self.screen(holding: topRect, in: screens),
+              let usable = NSScreen.screens.first(where: { $0.frame == display })?.visibleFrame else { return [] }
+        let bounds = usable.insetBy(dx: -Self.tileSlack, dy: -Self.tileSlack)
+        guard bounds.contains(topRect), Self.snapped(topRect, to: usable) else { return [] }
+        // Windows on the display, front to back, that could be part of a layout: not overlapping a window in front
+        // of them (with coverCounts false, only the candidates count, so windows hidden behind them still drop out).
+        var inFront: [CGRect] = []
+        var candidates: [(id: CGWindowID, rect: CGRect)] = []
+        for w in windows where w.owner != ownPID {
+            guard let r = w.rect, Self.screen(holding: r, in: screens) == display else { continue }
+            let fits = w.id != top && bounds.contains(r) && Self.snapped(r, to: usable) && !Self.overlaps(r, topRect)
+                && !inFront.contains(where: { Self.overlaps($0, r) })
+            if fits { candidates.append((w.id, r)) }
+            if fits || coverCounts { inFront.append(r) }
+        }
+        guard !candidates.isEmpty else { return [] }
+        // The group around the top window: neighbours, their neighbours and so on.
+        var group: [(id: CGWindowID, rect: CGRect)] = [(top, topRect)]
+        while let i = candidates.firstIndex(where: { c in group.contains { Self.adjacent($0.rect, c.rect) } }) {
+            group.append(candidates.remove(at: i))
+        }
+        return Array(group.dropFirst())
+    }
+
+    /// Snapped to the edges of the usable area the way tiling places windows: in a corner (two adjacent edges) or
+    /// across it (two opposite edges).
+    private static func snapped(_ r: CGRect, to usable: CGRect) -> Bool {
+        let left = abs(r.minX - usable.minX) <= tileGap, right = abs(r.maxX - usable.maxX) <= tileGap
+        let bottom = abs(r.minY - usable.minY) <= tileGap, top = abs(r.maxY - usable.maxY) <= tileGap
+        return (left || right) && (top || bottom) || (left && right) || (top && bottom)
+    }
+
+    private static func overlaps(_ a: CGRect, _ b: CGRect) -> Bool {
+        let i = a.intersection(b)
+        return !i.isNull && i.width > tileSlack && i.height > tileSlack
+    }
+
+    /// Side by side or one above the other, sharing a good part of an edge.
+    private static func adjacent(_ a: CGRect, _ b: CGRect) -> Bool {
+        let sharedX = min(a.maxX, b.maxX) - max(a.minX, b.minX)
+        let sharedY = min(a.maxY, b.maxY) - max(a.minY, b.minY)
+        let sideBySide = (abs(a.maxX - b.minX) <= tileGap || abs(b.maxX - a.minX) <= tileGap) && sharedY >= tileMinShared
+        let stacked = (abs(a.maxY - b.minY) <= tileGap || abs(b.maxY - a.minY) <= tileGap) && sharedX >= tileMinShared
+        return sideBySide || stacked
     }
 }
 

@@ -14,6 +14,7 @@ several in a row.
 | Keep Bright | All App Windows |
 | Hide While Dragging | on |
 | Dim Menu Bar | on |
+| Keep Tiled Windows Bright | on |
 | Dim Active Display Only | off |
 | Highlight Window Under Pointer | off |
 | Trackpad Haptics | on |
@@ -57,6 +58,13 @@ desktop (Finder active without windows) and on an empty screen there's no effect
 - **Dim Menu Bar**: the effect covers the menu bar too. The menu bar is translucent in macOS 26 and later, so with
   strong dimming it gets dark while its icons may stay dark. Turn this off to stop the effect at the bottom edge of
   the menu bar. With an auto-hiding menu bar the effect always covers the whole screen.
+- **Keep Tiled Windows Bright**: windows laid out side by side with the active one (snapped to halves, thirds or
+  quarters of the screen by macOS, Rectangle, Magnet and the like) stay bright with it, so switching between them
+  doesn't flash. macOS doesn't tell which windows are tiled, so it's judged by their alignment: they don't overlap,
+  touch each other along an edge, and each is snapped to the edges of the screen (without the menu bar and the Dock),
+  in a corner or across its whole height or width. The layout doesn't have to fill the screen: three quarters with the
+  fourth left empty count too. Windows that just stand next to each other don't count. A tiled window of another app that's resized on its own is picked up at the
+  next click or window switch.
 - **Dim Active Display Only**: with several displays, only the one with the active window gets the effect (the one
   holding most of the window); the others stay as they are, for reference material or a chat on a second display. The
   effect moves with the active window from display to display. Off by default: then each display works on its own,
@@ -65,7 +73,8 @@ desktop (Finder active without windows) and on an empty screen there's no effect
 - **Highlight Window Under Pointer**: when the pointer rests on a dimmed window for 1.5 seconds, the effect moves
   below that window, so it and every window above it become visible; it doesn't become active. From then on, moving
   the pointer onto another window that isn't the active one moves the effect below that window, and moving it onto the
-  active window, the desktop, the menu bar or the Dock brings the effect back. Only dimmed windows take part: not the
+  active window, the desktop, the menu bar or the Dock brings the effect back. A window that's part of a layout (see
+  *Keep Tiled Windows Bright*) is highlighted with all the windows of its layout. Only dimmed windows take part: not the
   desktop, the menu bar, the Dock or windows that are bright anyway. Off by default. While it's on, the app follows
   the pointer, at the same cost as *Shake Pointer to Toggle* (shared when both are on).
 - **Trackpad Haptics**: soft taps of the Force Touch trackpad. While a slider is dragged, a tap at every 1 % step that

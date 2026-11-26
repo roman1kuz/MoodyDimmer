@@ -120,7 +120,9 @@ final class PeekWatcher {
         guard target.activeRegion.contains(p) else { return false }
         if now - snapshotTime > snapshotInterval { takeSnapshot(at: now) }
         guard let window = windowUnder(p) else { return staleTarget() }
-        if window.id == target.topID || isAboveTop(window, target: target) { return true }
+        if window.id == target.topID || target.tiledIDs.contains(window.id) || isAboveTop(window, target: target) {
+            return true
+        }
         let activePID = snapshot.first(where: { $0.id == target.topID })?.pid
         if window.pid == activePID, target.holes?.contains(p) == true { return true }
         return staleTarget()
@@ -136,7 +138,8 @@ final class PeekWatcher {
 
     /// The window under the point if it's one that's dimmed: a normal window below the top window.
     private func dimmedWindow(at p: CGPoint, target: FocusTarget) -> WindowInfo? {
-        guard let window = windowUnder(p), window.id != target.topID, !isAboveTop(window, target: target) else { return nil }
+        guard let window = windowUnder(p), window.id != target.topID, !target.tiledIDs.contains(window.id),
+              !isAboveTop(window, target: target) else { return nil }
         return window
     }
 
