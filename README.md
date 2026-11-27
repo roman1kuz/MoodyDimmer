@@ -1,16 +1,20 @@
 # Moody Dimmer
 
+A free, open-source macOS menu bar app that dims and blurs inactive windows, so only the active window stands out. If
+you know HazeOver or Monocle, it's the same idea.
+
 **English** · [Русский](README.ru.md) · [Español](README.es.md)
 
 _**M**y **O**ccasionally **O**dd **D**immer **Y**ields **D**arkness, **I**f **M**acOS **M**ostly **E**xecutes **R**equests._
 
-A macOS menu bar app that dims, blurs or adds film grain to everything except the active window.
-
 - Dim, blur or both, with optional film grain, each with its own strength.
 - Keeps either the active window or all of the active app's windows bright.
-- Optionally reveals the window the pointer rests on for 1.5 seconds, along with the windows above it.
+- Windows tiled side by side with the active one stay bright with it.
+- With several displays, each one keeps its own top window bright.
+- Optionally reveals the window the pointer rests on for 1.5 seconds.
 - Smooth transitions on focus changes; the background never flickers.
-- Steps aside in full screen, Mission Control, Show Desktop and while dragging files to another app.
+- Steps aside in full screen, Mission Control and Show Desktop, while you drag files to another app and while you
+  pick what to capture in a screenshot. Screenshots, screen recordings and screen sharing don't show the effect.
 - Quick toggle with a keyboard shortcut (⌃⌥⌘D) or by shaking the pointer.
 - Close to zero cost when idle: event-driven, no polling timers.
 - English, Russian and Spanish.

@@ -1,17 +1,20 @@
 # Moody Dimmer
 
+Una app gratuita y de código abierto para la barra de menús de macOS que oscurece y desenfoca las ventanas inactivas,
+para que solo destaque la ventana activa. Si conoces HazeOver o Monocle, es la misma idea.
+
 [English](README.md) · [Русский](README.ru.md) · **Español**
 
 _**M**y **O**ccasionally **O**dd **D**immer **Y**ields **D**arkness, **I**f **M**acOS **M**ostly **E**xecutes **R**equests._
 
-Una app de la barra de menús de macOS que oscurece, desenfoca o añade grano de película a todo menos a la ventana
-activa.
-
 - Oscurecer, desenfoque o ambos, con grano opcional, cada uno con su propia intensidad.
 - Mantiene iluminada la ventana activa o todas las ventanas de la app activa.
-- Opcionalmente descubre la ventana sobre la que el puntero se detiene 1,5 segundos, junto con las ventanas que tiene encima.
+- Las ventanas en mosaico junto a la activa siguen iluminadas con ella.
+- Con varias pantallas, cada una mantiene iluminada su propia ventana superior.
+- Opcionalmente descubre la ventana sobre la que el puntero se detiene 1,5 segundos.
 - Transiciones suaves al cambiar el foco; el fondo nunca parpadea.
-- Se aparta a pantalla completa, en Mission Control, en Mostrar escritorio y al arrastrar archivos a otra app.
+- Se aparta a pantalla completa, en Mission Control y en Mostrar escritorio, al arrastrar archivos a otra app y
+  mientras eliges qué capturar. Las capturas, las grabaciones y la pantalla compartida no muestran el efecto.
 - Activación rápida con un atajo de teclado (⌃⌥⌘D) o agitando el puntero.
 - En reposo casi no cuesta nada: funciona por eventos, sin temporizadores de sondeo.
 - Inglés, ruso y español.
