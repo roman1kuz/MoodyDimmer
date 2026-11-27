@@ -237,21 +237,28 @@ final class PeekWatcher {
                 as? [[String: Any]] else { snapshot = []; return }
         let primaryHeight = NSScreen.screens.first?.frame.height ?? 0
         snapshot = list.compactMap { w in
-            // Our own windows (the overlays, the menu) let clicks through or come and go: skip them.
-            guard let pid = w[kCGWindowOwnerPID as String] as? pid_t, pid != ownPID,
+            // Our overlays (normal level) let clicks through: skip them. Our other windows (the status menu, an
+            // alert) are on other levels and block what's below them like macOS's own UI.
+            let layer = w[kCGWindowLayer as String] as? Int ?? 0
+            guard let pid = w[kCGWindowOwnerPID as String] as? pid_t, !(pid == ownPID && layer == 0),
                   (w[kCGWindowAlpha as String] as? Double ?? 1) > 0.01,
                   let id = w[kCGWindowNumber as String] as? CGWindowID,
                   let bd = w[kCGWindowBounds as String] as? NSDictionary,
                   let r = CGRect(dictionaryRepresentation: bd as CFDictionary), r.width > 8, r.height > 8
             else { return nil }
-            let isNormal = (w[kCGWindowLayer as String] as? Int) == 0
+            let isNormal = layer == 0
             // Other window levels block only when they're macOS's own UI (the Dock, the menu bar, Notification
-            // Center…): third-party floating windows are often large and mostly transparent.
-            if !isNormal, !isSystemProcess(pid) { return nil }
+            // Center…), ours, or an open menu of any app (its menu bar, a menu bar extra, a context menu), so
+            // resting the pointer on a menu doesn't count for the window under it. Other third-party floating
+            // windows are often large and mostly transparent (a notch utility's panel).
+            if !isNormal, pid != ownPID, layer != Self.menuLevel, !isSystemProcess(pid) { return nil }
             let frame = CGRect(x: r.minX, y: primaryHeight - r.maxY, width: r.width, height: r.height)
             return WindowInfo(id: id, pid: pid, frame: frame, isNormal: isNormal)
         }
     }
+
+    /// The window level of open menus (101).
+    private static let menuLevel = Int(CGWindowLevelForKey(.popUpMenuWindow))
 
     private var systemProcesses: [pid_t: Bool] = [:]
 

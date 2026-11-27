@@ -131,6 +131,12 @@ final class FocusTracker {
     private var workspaceTokens: [NSObjectProtocol] = []
     private var distributedTokens: [NSObjectProtocol] = []
     private var mouseMonitor: Any?
+    private var mouseDownMonitor: Any?
+    /// A Finder window was closed or minimized while Finder was active. macOS keeps Finder active after its last
+    /// window goes, which looks just like the desktop being clicked, but the user is still working with the
+    /// windows left: they keep the effect (the top one bright). Cleared when another app activates or a click lands
+    /// while Finder is active (on the desktop, or Finder's menu).
+    private var finderWindowClosed = false
     private let ownPID = ProcessInfo.processInfo.processIdentifier
     /// Screens currently showing a full screen Space. The Space type changes only on a Space change,
     /// so it is computed once per event, not on every refresh.
@@ -206,6 +212,11 @@ final class FocusTracker {
         // a mouse click. Fires on clicks only; monitoring the mouse needs no permission.
         // The monitor sees the event before the app handles it (e.g. closes a window via the
         // close button), so delayed rechecks are needed too.
+        // A click while Finder is active after its last window closed: on the desktop now (or Finder's menu). The
+        // press comes before the release that closes a window, so it can't clear the mark the close sets.
+        mouseDownMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] _ in
+            self?.finderWindowClosed = false
+        }
         mouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] _ in
             self?.scheduleUpdate()
             self?.refreshSoon()
@@ -221,7 +232,10 @@ final class FocusTracker {
         workspaceTokens = []
         distributedTokens = []
         if let m = mouseMonitor { NSEvent.removeMonitor(m) }
+        if let m = mouseDownMonitor { NSEvent.removeMonitor(m) }
         mouseMonitor = nil
+        mouseDownMonitor = nil
+        finderWindowClosed = false
         detach()
         lastTarget = nil
         delivered = false
@@ -239,6 +253,7 @@ final class FocusTracker {
 
     private func frontAppChanged(_ pid: pid_t?) {
         guard let pid, pid != ownPID else { return }
+        finderWindowClosed = false
         log.debug("activated pid \(pid)")
         if pid != observedPID || observer == nil {
             attachRetries = 0
@@ -303,9 +318,10 @@ final class FocusTracker {
         // No active window (the last one was closed, or an app quit and focus went nowhere): the top window on
         // screen stays bright, with the same Keep Bright rule, so other windows still don't sit in the dimmed
         // background. Except on the desktop (Finder active without windows): the user is working with the
-        // desktop's files then, so nothing is dimmed.
+        // desktop's files then, so nothing is dimmed. Closing or minimizing Finder's last window leaves Finder
+        // active too, but that isn't the desktop (finderWindowClosed).
         followingTopWindow = false
-        if target == nil, !isDesktop(front) {
+        if target == nil, !isDesktop(front) || finderWindowClosed {
             followingTopWindow = true
             if let pid = topWindowOwner() { target = buildTargets(pid: pid) }
         }
@@ -430,6 +446,7 @@ final class FocusTracker {
             observeWindow(element)
             scheduleUpdate()
         case kAXUIElementDestroyedNotification, kAXWindowMiniaturizedNotification:
+            if observedIsFinder { finderWindowClosed = true }
             let id = windowIDs[element] ?? Self.windowID(of: element)
             if notification == kAXUIElementDestroyedNotification { windowIDs[element] = nil }
             if let id { markLeaving(id) }
@@ -492,7 +509,13 @@ final class FocusTracker {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in self?.leavingWindows.remove(id) }
     }
 
-    /// Finder is active without windows of its own: the user clicked the desktop (or closed Finder's last window).
+    private var observedIsFinder: Bool {
+        guard let pid = observedPID else { return false }
+        return NSRunningApplication(processIdentifier: pid)?.bundleIdentifier == "com.apple.finder"
+    }
+
+    /// Finder is active without windows of its own: the user clicked the desktop (unless `finderWindowClosed`: its
+    /// last window was just closed or minimized).
     private func isDesktop(_ front: NSRunningApplication?) -> Bool {
         guard let front, !front.isTerminated, !front.isHidden else { return false }
         return front.bundleIdentifier == "com.apple.finder"
