@@ -3,6 +3,8 @@
 Una app gratuita y de código abierto para la barra de menús de macOS que oscurece y desenfoca las ventanas inactivas,
 para que solo destaque la ventana activa. Si conoces HazeOver o Monocle, es la misma idea.
 
+![Moody Dimmer oscurece y desenfoca las ventanas inactivas en macOS y mantiene iluminada la ventana activa](docs/images/screenshot.png)
+
 [English](README.md) · [Русский](README.ru.md) · **Español**
 
 _**M**y **O**ccasionally **O**dd **D**immer **Y**ields **D**arkness, **I**f **M**acOS **M**ostly **E**xecutes **R**equests._

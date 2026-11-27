@@ -3,6 +3,8 @@
 Бесплатное приложение для строки меню macOS с открытым исходным кодом: затемняет и размывает неактивные окна, чтобы
 выделялось только активное. Если знаете HazeOver или Monocle — идея та же.
 
+![Moody Dimmer затемняет и размывает неактивные окна в macOS, активное окно остаётся ярким](docs/images/screenshot.png)
+
 [English](README.md) · **Русский** · [Español](README.es.md)
 
 _**M**y **O**ccasionally **O**dd **D**immer **Y**ields **D**arkness, **I**f **M**acOS **M**ostly **E**xecutes **R**equests._

@@ -3,6 +3,8 @@
 A free, open-source macOS menu bar app that dims and blurs inactive windows, so only the active window stands out. If
 you know HazeOver or Monocle, it's the same idea.
 
+![Moody Dimmer dims and blurs inactive windows on macOS, keeping the active window bright](docs/images/screenshot.png)
+
 **English** · [Русский](README.ru.md) · [Español](README.es.md)
 
 _**M**y **O**ccasionally **O**dd **D**immer **Y**ields **D**arkness, **I**f **M**acOS **M**ostly **E**xecutes **R**equests._
