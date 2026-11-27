@@ -49,7 +49,25 @@ What stays bright while everything else is dimmed:
 
 When the active app has no windows (you closed its last one, or an app quit and focus went nowhere), the top window
 left on screen stays bright with the same rule, so the remaining windows don't sit in the dimmed background. On the
-desktop (Finder active without windows) and on an empty screen there's no effect.
+desktop (you clicked it, so Finder is active without windows) and on an empty screen there's no effect. Closing or
+minimizing Finder's last window (a folder, the Trash) doesn't count as the desktop: the effect stays on the other
+windows.
+
+## Several displays
+
+Each display works on its own:
+
+- The display with the active window keeps it bright. Every other display keeps its own top window bright: the window
+  mostly on that display that's in front of the others there. The same *Keep Bright* rule and *Keep Tiled Windows
+  Bright* apply on each display.
+- A window reaching onto another display from the active one stays bright there too.
+- A display without windows gets no effect. A full screen video or app on one display removes the effect only there.
+- *Highlight Window Under Pointer* works on every display, for the windows below that display's top window.
+- *Hide While Dragging* removes the effect only from the display under the pointer.
+- With *Dim Active Display Only* the other displays get no effect at all.
+
+Clicking the desktop (Finder active without windows) removes the effect from every display, and so do Mission
+Control, App Exposé and Show Desktop.
 
 ## Behavior
 

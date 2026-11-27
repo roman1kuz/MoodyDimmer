@@ -12,7 +12,7 @@ _**M**y **O**ccasionally **O**dd **D**immer **Y**ields **D**arkness, **I**f **M*
 - Oscurecer, desenfoque o ambos, con grano opcional, cada uno con su propia intensidad.
 - Mantiene iluminada la ventana activa o todas las ventanas de la app activa.
 - Las ventanas en mosaico junto a la activa siguen iluminadas con ella.
-- Con varias pantallas, cada una mantiene iluminada su propia ventana superior.
+- Con [varias pantallas](docs/settings.es.md#varias-pantallas), cada una mantiene iluminada su propia ventana superior.
 - Opcionalmente descubre la ventana sobre la que el puntero se detiene 1,5 segundos.
 - Transiciones suaves al cambiar el foco; el fondo nunca parpadea.
 - Se aparta a pantalla completa, en Mission Control y en Mostrar escritorio, al arrastrar archivos a otra app y

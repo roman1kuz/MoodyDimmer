@@ -12,7 +12,7 @@ _**M**y **O**ccasionally **O**dd **D**immer **Y**ields **D**arkness, **I**f **M*
 - Dim, blur or both, with optional film grain, each with its own strength.
 - Keeps either the active window or all of the active app's windows bright.
 - Windows tiled side by side with the active one stay bright with it.
-- With several displays, each one keeps its own top window bright.
+- With [several displays](docs/settings.md#several-displays), each one keeps its own top window bright.
 - Optionally reveals the window the pointer rests on for 1.5 seconds.
 - Smooth transitions on focus changes; the background never flickers.
 - Steps aside in full screen, Mission Control and Show Desktop, while you drag files to another app and while you

@@ -50,7 +50,27 @@ Qué sigue iluminado mientras todo lo demás se oscurece:
 
 Cuando la app activa no tiene ventanas (cerraste la última, o una app se cerró y el foco no pasó a ninguna parte),
 sigue iluminada con la misma regla la ventana superior que quede en pantalla, para que las ventanas restantes no se
-pierdan en el fondo oscurecido. En el escritorio (Finder activo sin ventanas) y con la pantalla vacía no hay efecto.
+pierdan en el fondo oscurecido. En el escritorio (hiciste clic en él, así que Finder está activo sin ventanas) y con
+la pantalla vacía no hay efecto. Cerrar o minimizar la última ventana de Finder (una carpeta, la Papelera) no cuenta
+como el escritorio: el efecto sigue en las demás ventanas.
+
+## Varias pantallas
+
+Cada pantalla funciona por separado:
+
+- La pantalla con la ventana activa la mantiene iluminada. Cada una de las demás mantiene iluminada su propia ventana
+  superior: la que está mayormente en esa pantalla y por encima de las demás allí. La regla de *Mantener iluminado* y
+  *No oscurecer las ventanas en mosaico* se aplican en cada pantalla.
+- Una ventana de la pantalla activa que se extiende a otra sigue iluminada también allí.
+- Una pantalla sin ventanas no recibe efecto. Un vídeo o una app a pantalla completa en una pantalla quita el efecto
+  solo en ella.
+- *Iluminar la ventana bajo el puntero* funciona en todas las pantallas, para las ventanas por debajo de la ventana
+  superior de esa pantalla.
+- *Quitar el efecto al arrastrar* quita el efecto solo de la pantalla bajo el puntero.
+- Con *Oscurecer solo la pantalla activa*, las demás pantallas no reciben ningún efecto.
+
+Hacer clic en el escritorio (Finder activo sin ventanas) quita el efecto de todas las pantallas, igual que Mission
+Control, App Exposé y Mostrar escritorio.
 
 ## Comportamiento
 
