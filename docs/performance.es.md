@@ -81,7 +81,7 @@ modos, se vio que WindowServer está en silencio en reposo y publica:
   pantalla o se minimiza no publica nada.
 - Los cambios de app no publican ninguno de los dos.
 
-Así que el observador se registra solo en `1325` y `1326`. Con `1325` consulta esa única ventana y la recuerda si es
+Así que para estos modos el observador usa `1325` y `1326`. Con `1325` consulta esa única ventana y la recuerda si es
 un escudo; con `1326` la olvida. Mientras un modo está abierto, un clic del ratón vuelve a comprobar que el escudo
 sigue en pantalla, por si se perdió algún evento.
 
@@ -89,6 +89,22 @@ Si `SLSRegisterNotifyProc` desaparece en una futura versión de macOS, el observ
 números de las ventanas en pantalla 5 veces por segundo (`CGWindowListCreate`, ~70 µs por llamada) y solo pide sus
 descripciones cuando ese conjunto cambia. Eso cuesta ~0,2–0,4 % de CPU y ~14 activaciones cada 5 s con el efecto
 activado.
+
+## Interfaz de captura
+
+Mientras eliges qué capturar con ⌘⇧4, ⌘⇧4 + espacio o ⌘⇧5 (Ocultar en capturas de pantalla), el efecto se aparta. La
+señal es una ventana `touchshield` del proceso `screencapture` (capa 1498) sobre la pantalla; la ventana a pantalla
+completa propia de screencaptureui (capa 24) sigue tras la captura, así que no sirve.
+
+El escudo aparece sin `1325` y se va sin `1326`. Lo que WindowServer envía en su lugar (hallado del mismo modo):
+`1327` cuando un proceso abre su conexión con WindowServer y `1328` cuando la cierra, con el número de conexión en los
+datos. `screencapture` se conecta justo antes de que aparezca el escudo y se desconecta cuando la captura se hace o se
+cancela. Así que el observador de capturas también los escucha: tras una conexión busca el escudo en la lista de
+ventanas 3 veces en medio segundo (tarda un momento en aparecer), tras una desconexión al instante y otra vez 0,1 s
+después. Los procesos se conectan solo al arrancar, así que la lista se lee pocas veces; con la opción desactivada no
+se vigila nada.
+
+La superposición queda fuera de las capturas gracias a `sharingType = .none`: sin ningún trabajo.
 
 ## Qué es lo que más cuesta
 

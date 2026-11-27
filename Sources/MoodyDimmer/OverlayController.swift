@@ -14,9 +14,9 @@ private final class ScreenOverlay {
     /// A focus change is animating; the final reorder and mask come when it ends.
     var transitioning = false
 
-    init(screen: NSScreen, coverMenuBar: Bool) {
+    init(screen: NSScreen, coverMenuBar: Bool, hiddenFromCapture: Bool) {
         screenFrame = screen.frame
-        window = OverlayWindow(screen: screen, coverMenuBar: coverMenuBar)
+        window = OverlayWindow(screen: screen, coverMenuBar: coverMenuBar, hiddenFromCapture: hiddenFromCapture)
     }
 }
 
@@ -26,7 +26,7 @@ final class OverlayController {
     private var target: FocusTarget?
     private var effects: EffectParams
     /// Why the effect is temporarily removed from every display. The target keeps updating meanwhile.
-    enum SuspendReason { case systemMode }
+    enum SuspendReason { case systemMode, screenshot }
     private var suspendReasons: Set<SuspendReason> = []
     private var suspended: Bool { !suspendReasons.isEmpty }
     /// The display under a dragged item outside its source app (Hide While Dragging): no effect there meanwhile.
@@ -46,8 +46,8 @@ final class OverlayController {
     func rebuildScreens() {
         // close(), not orderOut: otherwise old windows stay in NSApp.windows and are never released.
         screens.forEach { $0.window.close() }
-        let cover = settings.dimMenuBar
-        screens = NSScreen.screens.map { ScreenOverlay(screen: $0, coverMenuBar: cover) }
+        let cover = settings.dimMenuBar, hidden = settings.hideInScreenshots
+        screens = NSScreen.screens.map { ScreenOverlay(screen: $0, coverMenuBar: cover, hiddenFromCapture: hidden) }
         for s in screens { s.window.effectView.apply(effects, duration: 0) }
         if let target { show(target, duration: 0) }
     }
@@ -77,6 +77,11 @@ final class OverlayController {
         if on { suspendReasons.insert(reason) } else { suspendReasons.remove(reason) }
         guard suspended != was else { return }
         update(target: target)
+    }
+
+    /// Hide in Screenshots changed.
+    func updateCaptureVisibility() {
+        for s in screens { s.window.setHiddenFromCapture(settings.hideInScreenshots) }
     }
 
     func setDragScreen(_ screen: CGRect?) {

@@ -76,13 +76,29 @@ modes showed that WindowServer is silent at idle and posts:
   minimized posts nothing.
 - App switches post neither.
 
-So the watcher registers for `1325` and `1326` only. On `1325` it looks up that one window and remembers it if
+So for these modes the watcher uses `1325` and `1326`. On `1325` it looks up that one window and remembers it if
 it's a shield; on `1326` it forgets it. While a mode is up, a mouse click rechecks that the shield is still on
 screen, in case an event was missed.
 
 If `SLSRegisterNotifyProc` disappears in a future macOS, the watcher falls back to polling: it checks
 the on-screen window numbers 5 times a second (`CGWindowListCreate`, ~70 µs a call) and fetches descriptions
 only when that set changes. That costs ~0.2–0.4 % CPU and ~14 wakeups per 5 s while the effect is on.
+
+## Screenshot interface
+
+While you pick what to capture with ⌘⇧4, ⌘⇧4 Space or ⌘⇧5 (Hide in Screenshots), the effect steps aside. The marker
+is a `touchshield` window of the `screencapture` process (layer 1498) over the screen; screencaptureui's own full
+screen window (layer 24) stays after a capture, so it can't tell.
+
+The shield shows without a `1325` and goes without a `1326`. What WindowServer posts instead (found the same way):
+`1327` when a process opens its WindowServer connection and `1328` when it closes it, with the connection number in
+the payload. `screencapture` connects right before the shield shows and disconnects when the capture is taken or
+cancelled. So the screenshot watcher also listens for these: after a connection it looks for the shield in the
+window list 3 times within half a second (the shield takes a moment to show), after a disconnection at once and
+again 0.1 s later. Processes connect only when they start, so the list is read rarely; with Hide in Screenshots off
+nothing is watched.
+
+The overlay is kept out of the screenshots themselves by `sharingType = .none`: no work at all.
 
 ## What costs the most
 

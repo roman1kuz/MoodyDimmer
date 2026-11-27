@@ -6,7 +6,7 @@ final class OverlayWindow: NSWindow {
     /// Whether the window should be visible once the animation ends.
     var wantVisible = false
 
-    init(screen: NSScreen, coverMenuBar: Bool) {
+    init(screen: NSScreen, coverMenuBar: Bool, hiddenFromCapture: Bool) {
         let frame = coverMenuBar ? screen.frame : Self.belowMenuBar(screen)
         effectView = EffectView(frame: NSRect(origin: .zero, size: frame.size))
         super.init(contentRect: frame, styleMask: [.borderless], backing: .buffered, defer: true)
@@ -23,6 +23,7 @@ final class OverlayWindow: NSWindow {
         // With only .canJoinAllSpaces the window shows above the full screen window before any event arrives.
         collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenNone]
         alphaValue = 0
+        setHiddenFromCapture(hiddenFromCapture)
         contentView = effectView
         setFrame(frame, display: false)
     }
@@ -40,6 +41,12 @@ final class OverlayWindow: NSWindow {
     /// AppKit moves windows below the menu bar when they're shown or when displays change, which would shift the
     /// overlay (and every hole in its mask) down by the menu bar's height. It stays exactly where it's put.
     override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
+
+    /// Left out of screenshots, screen recordings and screen sharing (Hide in Screenshots): WindowServer doesn't
+    /// composite it into captured images, while it stays on screen.
+    func setHiddenFromCapture(_ hidden: Bool) {
+        sharingType = hidden ? .none : .readOnly
+    }
 
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }

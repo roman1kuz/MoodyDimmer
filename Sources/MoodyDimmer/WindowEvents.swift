@@ -3,10 +3,15 @@ import Foundation
 
 /// WindowServer's own window events (SkyLight, private): `shown` when a window becomes visible, `destroyed` when
 /// it's destroyed (a window that's only ordered out or minimized posts nothing). The payload carries the window
-/// number. Registered once for the app's lifetime and shared by everyone who needs it; handlers run on the main thread.
+/// number. `clientConnected` / `clientDisconnected` come when a process opens or closes its WindowServer connection
+/// (found by observation: the payload is the connection's number, so `window` means nothing for them); some windows,
+/// like the screenshot interface's shield, show without a `shown` event, but their process connects just before.
+/// Registered once for the app's lifetime and shared by everyone who needs it; handlers run on the main thread.
 enum WindowEvents {
     static let shown: UInt32 = 1325
     static let destroyed: UInt32 = 1326
+    static let clientConnected: UInt32 = 1327
+    static let clientDisconnected: UInt32 = 1328
 
     typealias Handler = (_ type: UInt32, _ window: CGWindowID) -> Void
     private static var handlers: [Handler] = []
@@ -38,7 +43,10 @@ enum WindowEvents {
                 DispatchQueue.main.async { WindowEvents.dispatch(type, window) }
             }
         }
-        return register(proc, shown, nil) == 0 && register(proc, destroyed, nil) == 0
+        guard register(proc, shown, nil) == 0, register(proc, destroyed, nil) == 0 else { return false }
+        _ = register(proc, clientConnected, nil)
+        _ = register(proc, clientDisconnected, nil)
+        return true
     }
 
     private static func dispatch(_ type: UInt32, _ window: CGWindowID) {

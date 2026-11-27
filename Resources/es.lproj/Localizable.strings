@@ -8,6 +8,7 @@
 "Dim Menu Bar" = "Oscurecer la barra de menús";
 "Dim Active Display Only" = "Oscurecer solo la pantalla activa";
 "Keep Tiled Windows Bright" = "No oscurecer las ventanas en mosaico";
+"Hide in Screenshots" = "Ocultar en capturas de pantalla";
 "Hide While Dragging" = "Quitar el efecto al arrastrar";
 "Highlight Window Under Pointer" = "Iluminar la ventana bajo el puntero";
 "Trackpad Haptics" = "Respuesta háptica del trackpad";

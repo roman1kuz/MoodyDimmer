@@ -13,6 +13,7 @@ así que puedes cambiar varias seguidas.
 | Efecto activado/desactivado | activado |
 | Mantener iluminado | Todas las ventanas de la app |
 | Quitar el efecto al arrastrar | activado |
+| Ocultar en capturas de pantalla | activado |
 | Oscurecer la barra de menús | activado |
 | No oscurecer las ventanas en mosaico | activado |
 | Oscurecer solo la pantalla activa | desactivado |
@@ -56,6 +57,22 @@ pierdan en el fondo oscurecido. En el escritorio (Finder activo sin ventanas) y 
 - **Quitar el efecto al arrastrar**: cuando lo que arrastras (un archivo, un clip, un texto) sale de las ventanas de
   la app de origen, el efecto se desvanece para que veas dónde soltarlo. Vuelve al soltar el botón del ratón. Con
   varias pantallas solo se quita en la que está el puntero, y pasa con él a otra pantalla.
+- **Ocultar en capturas de pantalla**: las capturas, las grabaciones de pantalla y la pantalla compartida no muestran
+  el efecto, mientras que en tu pantalla sigue. Cómo se comporta:
+  - ⌘⇧3 (toda la pantalla de una vez): el efecto sigue en pantalla y la captura sale sin él.
+  - ⌘⇧4, ⌘⇧4 + espacio y ⌘⇧5: el efecto se aparta mientras eliges qué capturar, así ves lo que obtendrás, y vuelve
+    cuando la captura se hace o se cancela.
+  - Otras apps de capturas (Shottr, Vorsaint y similares) con la congelación de pantalla activada: la imagen congelada
+    ya está sin el efecto, así que seleccionas sobre lo que obtendrás.
+  - Las mismas apps sin congelar la pantalla: **el efecto sigue en pantalla mientras seleccionas, pero la captura sale
+    sin él**, así que lo que ves difiere del resultado en el brillo (las ventanas son las mismas). Moody Dimmer no
+    puede saber cuándo otra app empieza a seleccionar. Para ver el resultado mientras seleccionas, activa la
+    congelación de pantalla en los ajustes de la app.
+  - La grabación y la pantalla compartida usan la misma captura, así que los demás ven tu pantalla sin el efecto.
+  - Las apps capturan la pantalla con macOS, que deja fuera el efecto; una app que la capture de otra forma lo
+    mostraría. Comprobado con la herramienta de capturas de macOS, Shottr y Vorsaint.
+
+  Desactívalo cuando quieras el efecto en una captura, por ejemplo para mostrar cómo se ve.
 - **Oscurecer la barra de menús**: el efecto cubre también la barra de menús. En macOS 26 y posteriores la barra de
   menús es translúcida, así que con un oscurecimiento fuerte se vuelve oscura mientras sus iconos pueden seguir
   oscuros. Desactívalo para que el efecto termine en el borde inferior de la barra de menús. Con la barra de menús
@@ -159,4 +176,5 @@ No hace falta ningún ajuste para esto:
 - Spaces a pantalla completa (vídeo, reproductores, apps a pantalla completa) y ventanas sin bordes que cubren toda la
   pantalla (juegos);
 - Mission Control, App Exposé y Mostrar escritorio;
-- al arrastrar fuera de la app de origen (si *Quitar el efecto al arrastrar* está activado).
+- al arrastrar fuera de la app de origen (si *Quitar el efecto al arrastrar* está activado);
+- mientras eliges qué capturar con ⌘⇧4 o ⌘⇧5 (si *Ocultar en capturas de pantalla* está activado).

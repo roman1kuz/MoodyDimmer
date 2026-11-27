@@ -46,6 +46,10 @@
 - Mission Control, App Exposé and Show Desktop: detected from the WindowManager window shown over the screen in these
   modes (see [performance.md](performance.md)).
 - Dragging: when a drag leaves the source app's windows (*Hide While Dragging*).
+- Screenshots (*Hide in Screenshots*): the overlay windows have `sharingType = .none`, so WindowServer leaves them out
+  of captured images while they stay on screen. While the screenshot interface is up (⌘⇧4, ⌘⇧5), the `screencapture`
+  process shows a `touchshield` window (layer 1498) over the screen, and the effect steps aside while it's there (see
+  [performance.md](performance.md)).
 
 ## Effects
 

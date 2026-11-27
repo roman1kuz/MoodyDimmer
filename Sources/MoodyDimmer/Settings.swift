@@ -13,6 +13,7 @@ enum SettingsChange {
     case enabled
     case focusMode
     case dragBehavior
+    case screenshots
     case menuBarCoverage
     case activeScreenOnly
     case tiling
@@ -37,6 +38,7 @@ final class Settings {
         static let enabled = "enabled"
         static let focusMode = "focusMode"
         static let hideWhileDragging = "hideWhileDragging"
+        static let hideInScreenshots = "hideInScreenshots"
         static let dimMenuBar = "dimMenuBar"
         static let dimActiveScreenOnly = "dimActiveScreenOnly"
         static let keepTiledBright = "keepTiledBright"
@@ -62,6 +64,7 @@ final class Settings {
             Key.enabled: true,
             Key.focusMode: FocusMode.app.rawValue,
             Key.hideWhileDragging: true,
+            Key.hideInScreenshots: true,
             Key.dimMenuBar: true,
             Key.dimActiveScreenOnly: false,
             Key.keepTiledBright: true,
@@ -107,6 +110,13 @@ final class Settings {
     var hideWhileDragging: Bool {
         get { d.bool(forKey: Key.hideWhileDragging) }
         set { d.set(newValue, forKey: Key.hideWhileDragging); onChange?(.dragBehavior) }
+    }
+
+    /// Screenshots, screen recordings and screen sharing don't show the effect, and it steps aside while you pick
+    /// what to capture with ⌘⇧4 or ⌘⇧5.
+    var hideInScreenshots: Bool {
+        get { d.bool(forKey: Key.hideInScreenshots) }
+        set { d.set(newValue, forKey: Key.hideInScreenshots); onChange?(.screenshots) }
     }
 
     /// Whether the effect also covers the menu bar. It's translucent in macOS 26+, so the effect behind it

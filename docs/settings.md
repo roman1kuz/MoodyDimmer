@@ -13,6 +13,7 @@ several in a row.
 | Effect on/off | on |
 | Keep Bright | All App Windows |
 | Hide While Dragging | on |
+| Hide in Screenshots | on |
 | Dim Menu Bar | on |
 | Keep Tiled Windows Bright | on |
 | Dim Active Display Only | off |
@@ -55,6 +56,22 @@ desktop (Finder active without windows) and on an empty screen there's no effect
 - **Hide While Dragging**: when something you drag (a file, a clip, text) leaves the windows of the app you drag it
   from, the effect fades out so you can see where to drop it. It comes back when you release the mouse button. With
   several displays only the one under the pointer loses the effect, and it follows the pointer to another display.
+- **Hide in Screenshots**: screenshots, screen recordings and screen sharing don't show the effect, while it stays on
+  your screen. How it behaves:
+  - ⌘⇧3 (the whole screen at once): the effect stays on screen, and the screenshot is taken without it.
+  - ⌘⇧4, ⌘⇧4 Space and ⌘⇧5: the effect steps aside while you pick what to capture, so you see what you'll get, and
+    comes back when the capture is taken or cancelled.
+  - Other screenshot apps (Shottr, Vorsaint and the like) with screen freezing on: the frozen picture is already
+    without the effect, so you select on what you'll get.
+  - The same apps without screen freezing: **the effect stays on screen while you select, but the screenshot is
+    without it**, so what you see differs from what you get in brightness (the windows are the same). Moody Dimmer
+    can't tell when another app starts selecting. To see the result while selecting, turn on screen freezing in the
+    app's settings.
+  - Screen recording and screen sharing go through the same capture, so others see your screen without the effect.
+  - Apps capture the screen through macOS, which leaves the effect out; an app that captures it some other way would
+    show it. Checked with the macOS screenshot tool, Shottr and Vorsaint.
+
+  Turn it off when you want the effect in a screenshot, for example to show how it looks.
 - **Dim Menu Bar**: the effect covers the menu bar too. The menu bar is translucent in macOS 26 and later, so with
   strong dimming it gets dark while its icons may stay dark. Turn this off to stop the effect at the bottom edge of
   the menu bar. With an auto-hiding menu bar the effect always covers the whole screen.
@@ -149,4 +166,5 @@ No setting needed for these:
 
 - full screen Spaces (video, players, apps in full screen) and borderless windows covering the whole screen (games);
 - Mission Control, App Exposé and Show Desktop;
-- while dragging outside the source app (if *Hide While Dragging* is on).
+- while dragging outside the source app (if *Hide While Dragging* is on);
+- while you pick what to capture with ⌘⇧4 or ⌘⇧5 (if *Hide in Screenshots* is on).

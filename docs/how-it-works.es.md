@@ -52,6 +52,10 @@
 - Mission Control, App Exposé y Mostrar escritorio: se detectan por la ventana de WindowManager que cubre la pantalla
   en estos modos (ver [performance.es.md](performance.es.md)).
 - Arrastrar: cuando lo arrastrado sale de las ventanas de la app de origen (*Quitar el efecto al arrastrar*).
+- Capturas (*Ocultar en capturas de pantalla*): las ventanas superpuestas tienen `sharingType = .none`, así que
+  WindowServer las deja fuera de las imágenes capturadas mientras siguen en pantalla. Mientras está abierta la interfaz
+  de captura (⌘⇧4, ⌘⇧5), el proceso `screencapture` muestra una ventana `touchshield` (capa 1498) sobre la pantalla, y
+  el efecto se aparta mientras está ahí (ver [performance.es.md](performance.es.md)).
 
 ## Efectos
 

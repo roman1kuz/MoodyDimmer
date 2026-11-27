@@ -501,6 +501,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     private var modeWindowRow: CheckRow!
     private var modeAppRow: CheckRow!
     private var hideDragRow: CheckRow!
+    private var screenshotRow: CheckRow!
     private var menuBarRow: CheckRow!
     private var peekRow: CheckRow!
     private var loginRow: CheckRow!
@@ -567,6 +568,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         modeWindowRow = check("Active Window Only") { $0.settings.focusMode = .window }
         modeAppRow = check("All App Windows") { $0.settings.focusMode = .app }
         hideDragRow = check("Hide While Dragging") { $0.settings.hideWhileDragging.toggle() }
+        screenshotRow = check("Hide in Screenshots") { $0.settings.hideInScreenshots.toggle() }
         menuBarRow = check("Dim Menu Bar") { $0.settings.dimMenuBar.toggle() }
         tiledRow = check("Keep Tiled Windows Bright") { $0.settings.keepTiledBright.toggle() }
         activeScreenRow = check("Dim Active Display Only") { $0.settings.dimActiveScreenOnly.toggle() }
@@ -634,6 +636,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             .separator(),
             header(L("Behavior")),
             rowItem(hideDragRow),
+            rowItem(screenshotRow),
             rowItem(menuBarRow),
             rowItem(tiledRow),
             rowItem(activeScreenRow),
@@ -689,6 +692,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         modeWindowRow.isOn = settings.focusMode == .window
         modeAppRow.isOn = settings.focusMode == .app
         hideDragRow.isOn = settings.hideWhileDragging
+        screenshotRow.isOn = settings.hideInScreenshots
         menuBarRow.isOn = settings.dimMenuBar
         activeScreenRow.isOn = settings.dimActiveScreenOnly
         tiledRow.isOn = settings.keepTiledBright

@@ -9,7 +9,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let pointer = PointerMonitor()
     private lazy var peek = PeekWatcher(tracker: tracker)
     private let recorder = ShortcutRecorder()
-    private let systemMode = SystemModeWatcher()
+    private let systemMode = SystemModeWatcher(.spaces)
+    private let screenshotUI = SystemModeWatcher(.screenshot)
     private var overlays: OverlayController!
     private var menu: StatusMenu!
 
@@ -31,6 +32,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         systemMode.onChange = { [weak self] active in
             guard let self else { return }
             self.overlays.setSuspended(active, reason: .systemMode)
+            if !active { self.tracker.refresh(force: true) }
+        }
+        // Picking what to capture with ⌘⇧4 or ⌘⇧5 (Hide in Screenshots): the effect steps aside, so you see what
+        // you'll get. Its window selection shows a normal-level window of its own meanwhile: reorder after.
+        screenshotUI.onChange = { [weak self] active in
+            guard let self else { return }
+            self.overlays.setSuspended(active, reason: .screenshot)
             if !active { self.tracker.refresh(force: true) }
         }
 
@@ -88,6 +96,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func updateSystemModeWatcher() {
         if settings.enabled { systemMode.start() } else { systemMode.stop() }
+        if settings.enabled && settings.hideInScreenshots { screenshotUI.start() } else { screenshotUI.stop() }
     }
 
     private func updateDragWatcher() {
@@ -112,6 +121,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             tracker.mode = settings.focusMode
         case .dragBehavior:
             updateDragWatcher()
+        case .screenshots:
+            overlays.updateCaptureVisibility()
+            updateSystemModeWatcher()
         case .menuBarCoverage:
             overlays.rebuildScreens()
         case .activeScreenOnly:
